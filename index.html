@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Traffic Info Quiz</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --fg: #000;
+      --radar: #111;
+      --ring: #222;
+      --cross: #444;
+      --label-bg: rgba(0,0,0,0.6);
+      --text: #fff;
+      --target: #0f0;
+      --intruder: #fff;
+    }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: system-ui, sans-serif;
+      margin: 0; padding: 1rem 0 4rem;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    h3 {
+      font-size: 1.1rem; margin: 1rem 0 1.2rem;
+      text-align: center; padding: 0 1rem;
+    }
+    .btn {
+      width: min(420px,90%); display: block;
+      margin: 0.5rem auto 0; padding: 0.9rem 1.2rem;
+      border-radius: 10px; border: 1px solid transparent;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+    }
+    .btn.primary { background: #000; color: #fff; }
+    .btn.outline { background: #fff; border-color: #000; color: #000; }
+    #answer {
+      margin: 1rem auto 0.5rem; max-width: 600px;
+      font-weight: 600; text-align: center;
+    }
+    .radar-wrap {
+      width: 100%; max-width: 420px; aspect-ratio:1;
+      display:flex; justify-content:center; align-items:center;
+    }
+    svg {
+      width:100%; height:100%;
+      background: var(--radar); border-radius:50%;
+    }
+  </style>
+</head>
+<body>
+
+  <h3 id="question">Give traffic information to …</h3>
+  <div class="radar-wrap"><svg id="radar"></svg></div>
+  <div id="answer" hidden></div>
+  <button class="btn primary" id="show">Show Answer</button>
+  <button class="btn outline" id="next">Next Scenario</button>
+
+<script>
+/* --------- CONSTANTS --------- */
+const VFR_TYPES = [
+  { name:'Cessna 172', wtc:'L', speed:{min:90,max:120}, altitude:{min:1000,max:4500} },
+  { name:'Piper PA-28', wtc:'L', speed:{min:85, max:115}, altitude:{min:1000,max:4500} },
+  { name:'Robinson R44', wtc:'L', speed:{min:80, max:100}, altitude:{min:500,max:2500} },
+  { name:'Cessna 152', wtc:'L', speed:{min:75, max:95}, altitude:{min:1000,max:3500} },
+  { name:'Diamond DA40', wtc:'L', speed:{min:110, max:140}, altitude:{min:1500,max:5500} },
+];
+const IFR_TYPES = [
+  { name:'Boeing 737', wtc:'M', speed:{min:250,max:290}, altitude:{min:5000,max:41000} },
+  { name:'Airbus A320', wtc:'M', speed:{min:250,max:290}, altitude:{min:5000,max:39000} },
+  { name:'Boeing 777', wtc:'H', speed:{min:250,max:300}, altitude:{min:10000,max:43000} },
+  { name:'Embraer 190', wtc:'M', speed:{min:230,max:270}, altitude:{min:5000,max:41000} },
+  { name:'Bombardier CRJ900', wtc:'M', speed:{min:220,max:260}, altitude:{min:5000,max:41000} },
+  { name:'ATR 72', wtc:'M', speed:{min:180,max:220}, altitude:{min:5000,max:25000} },
+];
+const MIL_TYPES = [
+  { name:'F-16', wtc:'L', speed:{min:200,max:400}, altitude:{min:1000,max:50000} },
+  { name:'C-130', wtc:'M', speed:{min:150,max:250}, altitude:{min:1000,max:30000} },
+  { name:'UH-60', wtc:'L', speed:{min:80,max:150}, altitude:{min:500,max:8000} },
+  { name:'F/A-18', wtc:'M', speed:{min:200,max:500}, altitude:{min:1000,max:50000} },
+  { name:'KC-135', wtc:'H', speed:{min:200,max:300}, altitude:{min:5000,max:41000} },
+];
+const TRAINING_TYPES = [
+  { name:'Beechcraft King Air', wtc:'L', speed:{min:200,max:250}, altitude:{min:5000,max:30000} },
+  { name:'Pilatus PC-12', wtc:'L', speed:{min:180,max:220}, altitude:{min:5000,max:30000} },
+];
+const REG_PREFIXES = ['N','G-','D-','F-','OO-','PH-'];
+const AIRLINE_CODES = ['AAL','DAL','UAL','SWA','JBU','BAW','DLH','AFR','KLM','RYR'];
+const TRAINING_CALLS = ['TRAINER','STUDENT','CESSNA','PIPER','DIAMOND'];
+const MIL_CALLS = ['REACH','CONVOY','SENTRY','VADER','HAWK','EAGLE'];
+
+/* --------- HELPERS --------- */
+const rnd = (min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+const pick = arr=>arr[rnd(0,arr.length-1)];
+const rndHeading = ()=>rnd(0,359);
+
+const genCallVFR=()=> {
+  if(Math.random() < 0.3) {
+    // Training callsigns
+    return pick(TRAINING_CALLS) + rnd(1,99);
+  }
+  // Regular VFR registration
+  const pre=pick(REG_PREFIXES);
+  if(pre.startsWith('N')) {
+    // US registration format
+    return 'N' + rnd(1,9) + Array.from({length:2}, ()=>String.fromCharCode(65+rnd(0,25))).join('');
+  } else {
+    // European format
+    const suffix = Math.random() < 0.7 
+      ? Array.from({length:rnd(2,3)}, ()=>String.fromCharCode(65+rnd(0,25))).join('')
+      : rnd(100,999).toString();
+    return pre + suffix;
+  }
+};
+
+const genCallIFR=()=> {
+  const code = pick(AIRLINE_CODES);
+  const flightNum = rnd(1,9999);
+  return code + flightNum;
+};
+
+const genCallMil=()=> {
+  const code = pick(MIL_CALLS);
+  const num = rnd(1,99);
+  return code + num;
+};
+
+const genSpeed=t=> rnd(t.speed.min,t.speed.max);
+const genLevelVFR=(type)=> {
+  // VFR altitudes follow hemispheric rule and are more realistic
+  const alt = rnd(Math.floor(type.altitude.min/500), Math.floor(type.altitude.max/500)) * 500;
+  return alt;
+};
+const genLevelIFR=(type)=> {
+  // IFR uses flight levels above 18,000ft, hundreds below
+  const maxFL = Math.floor(type.altitude.max/100);
+  const minFL = Math.floor(type.altitude.min/100);
+  return rnd(minFL, maxFL) * 100;
+};
+const genHistory=(pos,hd,n=3)=>{
+  // History goes in opposite direction of heading
+  const oppositeHd = (hd + 180) % 360;
+  const rad = oppositeHd * Math.PI/180;
+  const stepSize = 0.5; // Fixed step size in nautical miles
+  
+  return Array.from({length:n},(_,i)=>({
+    x: pos.x + Math.sin(rad) * stepSize * (i+1),
+    y: pos.y + Math.cos(rad) * stepSize * (i+1)
+  }));
+};
+
+/* --------- GENERATOR --------- */
+function generateExercise(){
+  // --- TARGET ---
+  const isVFR = Math.random() < 0.8;
+  const typeT = isVFR ? pick(VFR_TYPES) : pick(IFR_TYPES);
+  const levelT = isVFR ? genLevelVFR(typeT) : genLevelIFR(typeT);
+  const target = {
+    isVFR, wtc:typeT.wtc,
+    callsign: isVFR ? genCallVFR() : genCallIFR(),
+    heading: rndHeading(),
+    type: typeT, level: levelT,
+    speed: genSpeed(typeT),
+    position: {x:0, y:0}
+  };
+  target.history = genHistory(target.position, target.heading);
+
+  // --- INTRUDER POSITION & BEARING ---
+  const distanceNm = rnd(2,8); // Reduced max distance to keep within radar better
+  
+  // FIXED: Generate relative bearing (clock position) first, then calculate world position
+  const clockPos = rnd(1,12);
+  const relativeBearing = (clockPos === 12) ? 0 : clockPos * 30; // 0° = 12 o'clock, 30° = 1 o'clock, etc.
+  
+  // Convert relative bearing to true bearing by adding target's heading
+  const trueBearing = (target.heading + relativeBearing) % 360;
+  
+  const intrPos = {
+    x: Math.sin(trueBearing * Math.PI/180) * distanceNm,
+    y: Math.cos(trueBearing * Math.PI/180) * distanceNm,
+  };
+
+  // --- INTRUDER PROPS ---
+  const iVFR = isVFR;
+  const iMil = iVFR && Math.random()<0.1;
+  const iType = iMil ? pick(MIL_TYPES) : (iVFR ? pick(VFR_TYPES) : pick(IFR_TYPES));
+  const intrHeading = (rnd(trueBearing-15, trueBearing+15) + 360) % 360; // align intruder heading around true bearing
+  const delta = iVFR ? rnd(200,500) : rnd(500,1000);
+  const above = Math.random()<0.5;
+  let lvlI = above ? target.level + delta : target.level - delta;
+  let lvlCh;
+  if(!iVFR && Math.random()<0.25){
+    const to = lvlI < target.level ? target.level+1000 : target.level-1000;
+    lvlCh = {to, dir: lvlI<to ? '↑' : '↓'};
+  }
+
+  const intruder = {
+    isVFR: iVFR,
+    isMil: iMil,
+    wtc: iType.wtc,
+    callsign: iMil ? genCallMil() : (iVFR ? genCallVFR() : genCallIFR()),
+    heading: intrHeading,
+    type: iType,
+    level: lvlI,
+    levelChange: lvlCh,
+    speed: genSpeed(iType),
+    position: intrPos
+  };
+  intruder.history = genHistory(intruder.position, intruder.heading);
+
+  // --- DIRECTION CLASSIFICATION ---
+  const trackDiff = (intruder.heading - target.heading + 360) % 360;
+  let direction;
+  if(trackDiff <= 30 || trackDiff >= 330)          direction = 'same direction';
+  else if(trackDiff >= 150 && trackDiff <= 210)    direction = 'opposite direction';
+  else if(trackDiff > 30 && trackDiff < 150)       direction = 'crossing left to right';
+  else /* >210 && <330 */                           direction = 'crossing right to left';
+
+  // --- SOLUTION STRING ---
+  const lvlDelta = Math.round((intruder.level - target.level) / 100) * 100; // Round to nearest hundred
+  const lvlPart = Math.abs(lvlDelta) < 50
+    ? 'same level'
+    : `${Math.abs(lvlDelta)} feet ${lvlDelta > 0 ? 'above' : 'below'}`;
+  const wtcPart = intruder.wtc === 'H' ? ', heavy' : '';
+  const solution =
+    `${target.callsign}, traffic, ${clockPos} o'clock, ${distanceNm} miles, ` +
+    `${direction}, ${lvlPart}, ${intruder.type.name}${wtcPart}`;
+
+  return {
+    target,
+    intruder,
+    situation: {
+      clock: clockPos,
+      distance: distanceNm,
+      direction,
+      levelDiff: lvlDelta,
+      type: intruder.type.name
+    },
+    solution
+  };
+}
+
+/* --------- RENDER --------- */
+function drawRadar(svg, ex){
+  const svgNS = 'http://www.w3.org/2000/svg';
+  svg.innerHTML = '';
+  const w = svg.clientWidth, h = svg.clientHeight;
+  const cx = w/2, cy = h/2;
+  const SCALE = Math.min(w,h)/24;
+  const toPx = nm => nm*SCALE;
+  const BOUND = Math.min(w,h)/2, M = 8;
+
+  // background
+  const bg = document.createElementNS(svgNS,'rect');
+  bg.setAttribute('x',0); bg.setAttribute('y',0);
+  bg.setAttribute('width',w); bg.setAttribute('height',h);
+  bg.setAttribute('fill', getComputedStyle(document.documentElement).getPropertyValue('--radar').trim());
+  svg.appendChild(bg);
+
+  // center group
+  const g = document.createElementNS(svgNS,'g');
+  g.setAttribute('transform', `translate(${cx},${cy})`);
+  svg.appendChild(g);
+
+  // rings & labels
+  ['3NM','6NM','9NM'].forEach((lab,i)=>{
+    const r = document.createElementNS(svgNS,'circle');
+    r.setAttribute('cx',0); r.setAttribute('cy',0);
+    r.setAttribute('r', toPx((i+1)*3));
+    r.setAttribute('stroke', getComputedStyle(document.documentElement).getPropertyValue('--ring').trim());
+    r.setAttribute('fill','none'); r.setAttribute('stroke-width',1);
+    g.appendChild(r);
+
+    const t = document.createElementNS(svgNS,'text');
+    t.setAttribute('x', toPx((i+1)*3)-20);
+    t.setAttribute('y', 12);
+    t.setAttribute('fill','#666');
+    t.setAttribute('font-size',10);
+    t.setAttribute('font-family','sans-serif');
+    t.textContent = lab;
+    g.appendChild(t);
+  });
+
+  // crosshair
+  const drawLine = (x1,y1,x2,y2,stroke) => {
+    const l = document.createElementNS(svgNS,'line');
+    l.setAttribute('x1',x1); l.setAttribute('y1',y1);
+    l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+    l.setAttribute('stroke',stroke);
+    l.setAttribute('stroke-width',1);
+    g.appendChild(l);
+  };
+  const crossColor = getComputedStyle(document.documentElement).getPropertyValue('--cross').trim();
+  drawLine(-w,0,w,0,crossColor);
+  drawLine(0,-h,0,h,crossColor);
+
+  // draw aircraft (history, vector, symbol, label)
+  const placed = [];
+  const overlap = (a,b)=> {
+    // Add some padding to prevent labels from being too close
+    const padding = 5;
+    return !(a.x + a.w + padding < b.x || 
+             b.x + b.w + padding < a.x || 
+             a.y + a.h + padding < b.y || 
+             b.y + b.h + padding < a.y);
+  };
+
+  function placeLabel(x, y, boxW, boxH, BOUND, M, placed) {
+    // Helper function to check if a rectangle is fully within the circular radar
+    function isWithinCircle(bx, by, boxW, boxH, radius) {
+      // Check all four corners of the rectangle
+      const corners = [
+        [bx, by],           // top-left
+        [bx + boxW, by],    // top-right
+        [bx, by + boxH],    // bottom-left
+        [bx + boxW, by + boxH] // bottom-right
+      ];
+      
+      return corners.every(([px, py]) => {
+        const distance = Math.sqrt(px * px + py * py);
+        return distance <= radius - M; // Keep margin from edge
+      });
+    }
+
+    // Define preferred positions around the aircraft
+    const positions = [
+      { dx: M, dy: -boxH - M, anchor: 'start' },           // Top-right (preferred)
+      { dx: -boxW - M, dy: -boxH - M, anchor: 'end' },     // Top-left
+      { dx: M, dy: M, anchor: 'start' },                   // Bottom-right
+      { dx: -boxW - M, dy: M, anchor: 'end' },             // Bottom-left
+      { dx: -boxW / 2, dy: -boxH - M, anchor: 'middle' },  // Above-center
+      { dx: -boxW / 2, dy: M, anchor: 'middle' },          // Below-center
+      { dx: -boxW - M, dy: -boxH / 2, anchor: 'end' },     // Left-center
+      { dx: M, dy: -boxH / 2, anchor: 'start' },           // Right-center
+    ];
+
+    // Try each position in order
+    for (const pos of positions) {
+      const bx = x + pos.dx;
+      const by = y + pos.dy;
+
+      // Check if position is within circular radar bounds
+      const withinBounds = isWithinCircle(bx, by, boxW, boxH, BOUND);
+
+      // Check if position doesn't overlap with existing labels
+      const noOverlap = !placed.some(r => overlap(r, { x: bx, y: by, w: boxW, h: boxH }));
+
+      if (withinBounds && noOverlap) {
+        return { x: bx, y: by, w: boxW, h: boxH, anchor: pos.anchor };
+      }
+    }
+
+    // Enhanced fallback: Try to find any valid position within circular bounds
+    for (let attempt = 0; attempt < 36; attempt++) {
+      // Try different angles around the aircraft
+      const angle = (attempt * 10) * Math.PI / 180; // 10° increments for more options
+      const distance = 40 + (attempt * 4); // Gradually increase distance
+      
+      const testX = x + Math.cos(angle) * distance;
+      const testY = y + Math.sin(angle) * distance;
+      
+      // Try the position as-is first
+      if (isWithinCircle(testX, testY, boxW, boxH, BOUND)) {
+        const noOverlap = !placed.some(r => overlap(r, { x: testX, y: testY, w: boxW, h: boxH }));
+        if (noOverlap) {
+          return { x: testX, y: testY, w: boxW, h: boxH, anchor: 'start' };
+        }
+      }
+    }
+
+    // Final fallback: Place as close to center as possible while staying in bounds
+    let bestX = x - boxW / 2;
+    let bestY = y - boxH / 2;
+    
+    // Gradually move towards center until we find a position that fits
+    for (let shrink = 0; shrink < 10; shrink++) {
+      const factor = 1 - (shrink * 0.1);
+      const testX = bestX * factor;
+      const testY = bestY * factor;
+      
+      if (isWithinCircle(testX, testY, boxW, boxH, BOUND)) {
+        return { x: testX, y: testY, w: boxW, h: boxH, anchor: 'middle' };
+      }
+    }
+
+    // Absolute fallback: center the label (may overlap)
+    return { x: -boxW/2, y: -boxH/2, w: boxW, h: boxH, anchor: 'middle' };
+  }
+
+  function drawAc(ac, colorVar){
+    const color = getComputedStyle(document.documentElement).getPropertyValue(colorVar).trim();
+    const x = toPx(ac.position.x);
+    const y = -toPx(ac.position.y);
+
+    // history dots
+    ac.history.forEach(p=>{
+      const dot = document.createElementNS(svgNS,'circle');
+      dot.setAttribute('cx', toPx(p.x));
+      dot.setAttribute('cy', -toPx(p.y));
+      dot.setAttribute('r', 2);
+      dot.setAttribute('fill', color);
+      dot.setAttribute('opacity', 0.5);
+      g.appendChild(dot);
+    });
+
+    // vector line
+    const lenPx = ac.speed/10;
+    const rad   = ac.heading*Math.PI/180;
+    const x2 = x + Math.sin(rad)*lenPx;
+    const y2 = y - Math.cos(rad)*lenPx;
+    const vec = document.createElementNS(svgNS,'line');
+    vec.setAttribute('x1', x);
+    vec.setAttribute('y1', y);
+    vec.setAttribute('x2', x2);
+    vec.setAttribute('y2', y2);
+    vec.setAttribute('stroke', color);
+    vec.setAttribute('stroke-width', 2);
+    g.appendChild(vec);
+
+    // aircraft symbol
+    const sq = document.createElementNS(svgNS,'rect');
+    sq.setAttribute('x', x-4);
+    sq.setAttribute('y', y-4);
+    sq.setAttribute('width', 8);
+    sq.setAttribute('height', 8);
+    sq.setAttribute('fill', color);
+    g.appendChild(sq);
+
+    // info label
+    const lines = [
+      `${ac.callsign} ${ac.wtc} ${ac.type.name}`,
+      (ac.isVFR
+        ? `A${String(Math.round(ac.level/100)).padStart(2,'0')}`
+        : `FL${String(Math.round(ac.level/100)).padStart(3,'0')}`
+      ) + (ac.levelChange ? ` ${ac.levelChange.dir}${ac.isVFR?'A':'FL'}${Math.round(ac.levelChange.to/100)}` : '') + ` N${ac.speed}`
+    ];
+    const maxLen = Math.max(...lines.map(l=>l.length));
+    const boxW = maxLen*7 + 12;
+    const boxH = lines.length*14 + 6;
+
+    // Place label using the refined algorithm
+    const chosen = placeLabel(x, y, boxW, boxH, BOUND, M, placed);
+    placed.push(chosen);
+
+    // connector line
+    const cx2 = chosen.anchor==='end' ? chosen.x+chosen.w : chosen.x;
+    let cy2 = y;
+    cy2 = Math.max(chosen.y, Math.min(cy2, chosen.y+chosen.h));
+    const conn = document.createElementNS(svgNS,'line');
+    conn.setAttribute('x1', x);
+    conn.setAttribute('y1', y);
+    conn.setAttribute('x2', cx2);
+    conn.setAttribute('y2', cy2);
+    conn.setAttribute('stroke', '#888');
+    conn.setAttribute('stroke-width', 1);
+    g.appendChild(conn);
+
+    // label background
+    const bg2 = document.createElementNS(svgNS,'rect');
+    bg2.setAttribute('x', chosen.x);
+    bg2.setAttribute('y', chosen.y);
+    bg2.setAttribute('width', chosen.w);
+    bg2.setAttribute('height', chosen.h);
+    bg2.setAttribute('fill', getComputedStyle(document.documentElement).getPropertyValue('--label-bg').trim());
+    g.appendChild(bg2);
+
+    // label text
+    const txt = document.createElementNS(svgNS,'text');
+    const tx = chosen.x + (chosen.anchor==='end' ? chosen.w-6 : 6);
+    txt.setAttribute('x', tx);
+    txt.setAttribute('y', chosen.y+12);
+    txt.setAttribute('fill', getComputedStyle(document.documentElement).getPropertyValue('--text').trim());
+    txt.setAttribute('font-family','monospace');
+    txt.setAttribute('font-size',12);
+    txt.setAttribute('letter-spacing','0.5px');
+    txt.setAttribute('text-anchor', chosen.anchor);
+    lines.forEach((l,i)=>{
+      const tsp = document.createElementNS(svgNS,'tspan');
+      tsp.setAttribute('x', tx);
+      tsp.setAttribute('dy', i===0 ? 0 : 14);
+      tsp.textContent = l;
+      txt.appendChild(tsp);
+    });
+    g.appendChild(txt);
+  }
+
+  drawAc(ex.target, '--target');
+  drawAc(ex.intruder, '--intruder');
+}
+
+/* --------- UI HANDLERS --------- */
+const radar = document.getElementById('radar');
+const Q     = document.getElementById('question');
+const A     = document.getElementById('answer');
+const btnShow = document.getElementById('show');
+const btnNext = document.getElementById('next');
+let exercise = null;
+
+function renderAll(){
+  Q.textContent = `Give traffic information to ${exercise.target.callsign}`;
+  drawRadar(radar, exercise);
+  A.textContent = exercise.solution;
+}
+
+function newScenario(){
+  exercise = generateExercise();
+  A.hidden = true;
+  renderAll();
+}
+
+btnShow.addEventListener('click', () => A.hidden = false);
+btnNext.addEventListener('click', newScenario);
+window.addEventListener('resize', () => exercise && drawRadar(radar, exercise));
+
+// initialize
+newScenario();
+
+</script>
+</body>
+</html>
