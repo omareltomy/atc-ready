@@ -19,6 +19,14 @@ interface TestStats {
   altitudeRange: { min: number; max: number };
 }
 
+const ALLOWED_DIRECTIONS = [
+  'crossing left to right',
+  'crossing right to left',
+  'converging',
+  'opposite direction',
+  'overtaking'
+];
+
 function calculateClockPosition(targetPos: { x: number; y: number }, intruderPos: { x: number; y: number }): number {
   const dx = intruderPos.x - targetPos.x;
   const dy = intruderPos.y - targetPos.y;
@@ -113,6 +121,45 @@ function validateDirection(scenario: any): { valid: boolean; error?: string } {
     }
   }
   
+  return { valid: true };
+}
+
+function validateDirectionStrict(scenario: any): { valid: boolean; error?: string } {
+  const target = scenario.target;
+  const intruder = scenario.intruder;
+  const reportedDirection = scenario.situation.direction;
+  if (!ALLOWED_DIRECTIONS.includes(reportedDirection)) {
+    return { valid: false, error: `Direction '${reportedDirection}' is not allowed.` };
+  }
+  // Calculate intersection angle
+  const normalize = (h: number) => ((h % 360) + 360) % 360;
+  const tHdg = normalize(target.heading);
+  const iHdg = normalize(intruder.heading);
+  let diff = Math.abs(iHdg - tHdg);
+  if (diff > 180) diff = 360 - diff;
+  const relAngle = (iHdg - tHdg + 360) % 360;
+  // Overtaking: same direction, intruder faster
+  if (reportedDirection === 'overtaking') {
+    if (!(diff <= 45 && intruder.speed > target.speed)) {
+      return { valid: false, error: `Not overtaking: diff=${diff}, speeds ${intruder.speed} vs ${target.speed}` };
+    }
+  } else if (reportedDirection === 'converging') {
+    if (!(diff < 45)) {
+      return { valid: false, error: `Not converging: diff=${diff}` };
+    }
+  } else if (reportedDirection === 'opposite direction') {
+    if (!(diff > 315 || diff >= 135)) {
+      return { valid: false, error: `Not opposite: diff=${diff}` };
+    }
+  } else if (reportedDirection === 'crossing left to right') {
+    if (!(diff >= 45 && diff <= 135 && relAngle < 180)) {
+      return { valid: false, error: `Not crossing left to right: diff=${diff}, relAngle=${relAngle}` };
+    }
+  } else if (reportedDirection === 'crossing right to left') {
+    if (!(diff >= 45 && diff <= 135 && relAngle > 180)) {
+      return { valid: false, error: `Not crossing right to left: diff=${diff}, relAngle=${relAngle}` };
+    }
+  }
   return { valid: true };
 }
 
@@ -231,7 +278,7 @@ function runComprehensiveTest(numScenarios: number = 100): TestStats {
       const clockCheck = validateClockPosition(scenario);
       if (!clockCheck.valid) errors.push(`Clock: ${clockCheck.error}`);
       
-      const directionCheck = validateDirection(scenario);
+      const directionCheck = validateDirectionStrict(scenario);
       if (!directionCheck.valid) errors.push(`Direction: ${directionCheck.error}`);
       
       const distanceCheck = validateDistance(scenario);
@@ -317,6 +364,18 @@ function runComprehensiveTest(numScenarios: number = 100): TestStats {
   Object.entries(directionDistribution).forEach(([direction, count]) => {
     const percentage = (count / stats.total * 100).toFixed(1);
     console.log(`   ${direction}: ${count} (${percentage}%)`);
+  });
+  
+  // Check direction diversity
+  const missing = ALLOWED_DIRECTIONS.filter(d => !(d in directionDistribution));
+  if (missing.length > 0) {
+    console.log(`\n❌ MISSING DIRECTIONS: ${missing.join(', ')}`);
+  }
+  const minCount = Math.floor(numScenarios * 0.10);
+  Object.entries(directionDistribution).forEach(([direction, count]) => {
+    if (count < minCount) {
+      console.log(`❌ Direction '${direction}' is underrepresented: ${count} (<${minCount})`);
+    }
   });
   
   if (stats.failed > 0) {
