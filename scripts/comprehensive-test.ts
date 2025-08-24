@@ -1,4 +1,4 @@
-import { generateExercise } from '../lib/generator';
+import { generateExercise } from '../lib/generator.js';
 
 interface TestResult {
   passed: boolean;
@@ -27,22 +27,28 @@ const ALLOWED_DIRECTIONS = [
   'overtaking'
 ];
 
-function calculateClockPosition(targetPos: { x: number; y: number }, intruderPos: { x: number; y: number }): number {
+function calculateClockPosition(targetPos: { x: number; y: number }, intruderPos: { x: number; y: number }, targetHeading: number): number {
   const dx = intruderPos.x - targetPos.x;
   const dy = intruderPos.y - targetPos.y;
   
-  let angle = Math.atan2(dx, dy) * 180 / Math.PI;
-  if (angle < 0) angle += 360;
+  // Calculate the absolute bearing from target to intruder
+  let bearing = Math.atan2(dx, dy) * 180 / Math.PI;
+  if (bearing < 0) bearing += 360;
   
-  let clock = Math.round(angle / 30) + 1;
-  if (clock > 12) clock = 1;
-  if (clock < 1) clock = 12;
+  // Convert to relative bearing (relative to target's heading)
+  let relativeBearing = bearing - targetHeading;
+  while (relativeBearing < 0) relativeBearing += 360;
+  while (relativeBearing >= 360) relativeBearing -= 360;
+  
+  // Convert to clock position (12 o'clock = 0°, 3 o'clock = 90°, etc.)
+  let clock = Math.round(relativeBearing / 30);
+  if (clock === 0) clock = 12;
   
   return clock;
 }
 
 function validateClockPosition(scenario: any): { valid: boolean; error?: string } {
-  const actualClock = calculateClockPosition(scenario.target.position, scenario.intruder.position);
+  const actualClock = calculateClockPosition(scenario.target.position, scenario.intruder.position, scenario.target.heading);
   const reportedClock = scenario.situation.clock;
   
   // Allow ±1 clock position tolerance due to rounding
