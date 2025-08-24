@@ -133,7 +133,9 @@ export default function Radar({ exercise }: Props) {
       // Try quadrants
       const baseQ = Math.floor(((ac.heading + 45) % 360) / 90);
       let chosen: any = null;
-      for (let dist = 30; dist < 200 && !chosen; dist += 20) {
+      const maxRadius = BOUND - M; // Maximum distance from center
+      
+      for (let dist = 30; dist < 150 && !chosen; dist += 20) {
         for (let dq = 0; dq < 4; dq++) {
           const q = (baseQ + dq) % 4;
           const offX = (q === 1 || q === 2 ? -1 : 1) * dist;
@@ -141,16 +143,55 @@ export default function Radar({ exercise }: Props) {
           const anc = (q === 1 || q === 2) ? 'end' : 'start';
           let bx = x + offX + (anc === 'end' ? -boxW : 0);
           let by = y + offY - 14;
-          bx = Math.min(Math.max(bx, -BOUND + M), BOUND - M - boxW);
-          by = Math.min(Math.max(by, -BOUND + M), BOUND - M - boxH);
-          const rect = { x: bx, y: by, w: boxW, h: boxH, anchor: anc };
-          if (!placed.some(r => overlap(r, rect))) {
-            chosen = rect;
-            break;
+          
+          // Check if label fits within circular boundary
+          const corners = [
+            { x: bx, y: by },
+            { x: bx + boxW, y: by },
+            { x: bx, y: by + boxH },
+            { x: bx + boxW, y: by + boxH }
+          ];
+          
+          const allCornersInside = corners.every(corner => {
+            const distFromCenter = Math.sqrt(corner.x * corner.x + corner.y * corner.y);
+            return distFromCenter <= maxRadius;
+          });
+          
+          if (allCornersInside) {
+            const rect = { x: bx, y: by, w: boxW, h: boxH, anchor: anc };
+            if (!placed.some(r => overlap(r, rect))) {
+              chosen = rect;
+              break;
+            }
           }
         }
       }
-      if (!chosen) chosen = { x: x + 30, y: y - 14, w: boxW, h: boxH, anchor: 'start' };
+      if (!chosen) {
+        // Fallback: place label closer to aircraft, within bounds
+        let fallbackX = x + 30;
+        let fallbackY = y - 14;
+        
+        // Ensure fallback is within circular boundary
+        const fallbackCorners = [
+          { x: fallbackX, y: fallbackY },
+          { x: fallbackX + boxW, y: fallbackY },
+          { x: fallbackX, y: fallbackY + boxH },
+          { x: fallbackX + boxW, y: fallbackY + boxH }
+        ];
+        
+        const maxFallbackRadius = maxRadius - 10; // Extra margin for safety
+        if (!fallbackCorners.every(corner => {
+          const distFromCenter = Math.sqrt(corner.x * corner.x + corner.y * corner.y);
+          return distFromCenter <= maxFallbackRadius;
+        })) {
+          // If too far out, place it closer to center
+          const factor = maxFallbackRadius / Math.sqrt(fallbackX * fallbackX + fallbackY * fallbackY);
+          fallbackX = x + (fallbackX - x) * factor * 0.7;
+          fallbackY = y + (fallbackY - y) * factor * 0.7;
+        }
+        
+        chosen = { x: fallbackX, y: fallbackY, w: boxW, h: boxH, anchor: 'start' };
+      }
       placed.push(chosen);
 
       // Connector line
