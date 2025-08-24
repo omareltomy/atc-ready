@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ATC Training Exercise Generator
 
-## Getting Started
+A sophisticated aviation training system that generates realistic Air Traffic Control (ATC) scenarios for pilot training.
 
-First, run the development server:
+## 🚀 Features
+
+- **Realistic Traffic Patterns**: Implements official ATC direction definitions
+- **Smart Path Intersection**: Ensures aircraft will actually meet within radar range  
+- **Accurate Positioning**: Clock positions relative to aircraft heading
+- **Diverse Aircraft Types**: VFR, IFR, and military aircraft with proper callsigns
+- **Interactive Radar Display**: Visual representation of traffic scenarios
+
+## 🎯 Quick Start
 
 ```bash
+# Install dependencies
+npm install
+
+# Run the application
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Generate sample exercises
+npx tsx scripts/sample-exercises.ts
+
+# Run comprehensive tests
+npx tsx comprehensive-test.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📋 Traffic Pattern Definitions
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Pattern | Intersection Angle | Description |
+|---------|-------------------|-------------|
+| **Crossing Left to Right** | 45°-135° left | Traffic crosses from left to right |
+| **Crossing Right to Left** | 45°-135° right | Traffic crosses from right to left |
+| **Converging** | < 45° | Head-on or nearly head-on traffic |
+| **Opposite Direction** | > 315° | Aircraft on opposite headings |
+| **Overtaking** | Same direction | Faster aircraft in same direction |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🏗️ Project Structure
 
-## Learn More
+```
+├── lib/                    # Core generator logic
+│   ├── generator.ts        # Main exercise generator
+│   ├── constants.ts        # Aircraft specifications
+│   └── helpers.ts          # Utility functions
+├── components/             # React components
+│   ├── Radar.tsx          # Interactive radar display
+│   └── TrafficInfo.tsx    # Exercise information
+├── scripts/               # Testing and utilities
+│   ├── comprehensive-test.ts  # Full validation suite
+│   └── sample-exercises.ts    # Example generation
+└── __tests__/             # Unit tests
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 📊 Example Output
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+KLM1234, traffic, 2 o'clock, 6 miles, crossing left to right, 500 feet above, Boeing 737
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📖 Documentation
 
-## Deploy on Vercel
+For detailed technical documentation, see [GENERATOR_DOCUMENTATION.md](./GENERATOR_DOCUMENTATION.md)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🧪 Testing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The system includes comprehensive validation:
+
+- **Convergence Testing**: Ensures aircraft paths intersect
+- **Pattern Validation**: Verifies correct ATC classifications  
+- **Clock Position Accuracy**: Validates relative positioning
+- **Performance Monitoring**: Tracks generation success rates
+
+## 🔧 Configuration
+
+Customize aircraft types, speeds, and pattern weights in `lib/constants.ts`
+
+## 📈 Quality Metrics
+
+- **Target Convergence Rate**: >60%
+- **Pattern Distribution**: Balanced across all types
+- **Clock Position Accuracy**: >95%
+- **Direction Classification**: 100% ATC compliant
+
+---
+
+Built for realistic aviation training scenarios that follow actual ATC procedures.

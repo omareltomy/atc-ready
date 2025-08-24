@@ -1,10 +1,22 @@
+/**
+ * Aircraft type definitions and constants for the aviation traffic generator.
+ * This module contains aircraft specifications used for generating realistic traffic scenarios.
+ */
+
+/**
+ * Aircraft type interface defining the structure for all aircraft types.
+ */
 export interface AcType {
   name: string;
-  wtc: "L" | "M" | "H";
-  speed: { min: number; max: number };
-  altitude: { min: number; max: number };
+  wtc: "L" | "M" | "H"; // Wake Turbulence Category: Light, Medium, Heavy
+  speed: { min: number; max: number }; // Speed range in knots
+  altitude: { min: number; max: number }; // Altitude range in feet
 }
 
+/**
+ * VFR (Visual Flight Rules) aircraft types.
+ * These are typically smaller general aviation aircraft operating under visual flight rules.
+ */
 export const VFR_TYPES: AcType[] = [
   {
     name: "Cessna 172",
@@ -38,6 +50,10 @@ export const VFR_TYPES: AcType[] = [
   },
 ];
 
+/**
+ * IFR (Instrument Flight Rules) aircraft types.
+ * These are typically commercial aircraft operating under instrument flight rules.
+ */
 export const IFR_TYPES: AcType[] = [
   {
     name: "Boeing 737",
@@ -77,6 +93,10 @@ export const IFR_TYPES: AcType[] = [
   },
 ];
 
+/**
+ * Military aircraft types.
+ * These represent various military aircraft with extended operational envelopes.
+ */
 export const MIL_TYPES: AcType[] = [
   {
     name: "F-16",
@@ -108,33 +128,4 @@ export const MIL_TYPES: AcType[] = [
     speed: { min: 200, max: 300 },
     altitude: { min: 5000, max: 41000 },
   },
-];
-
-export const REG_PREFIXES = ["N", "G-", "D-", "F-", "OO-", "PH-"];
-export const AIRLINE_CODES = [
-  "AAL",
-  "DAL",
-  "UAL",
-  "SWA",
-  "JBU",
-  "BAW",
-  "DLH",
-  "AFR",
-  "KLM",
-  "RYR",
-];
-export const TRAINING_CALLS = [
-  "TRAINER",
-  "STUDENT",
-  "CESSNA",
-  "PIPER",
-  "DIAMOND",
-];
-export const MIL_CALLS = [
-  "REACH",
-  "CONVOY",
-  "SENTRY",
-  "VADER",
-  "HAWK",
-  "EAGLE",
 ];
