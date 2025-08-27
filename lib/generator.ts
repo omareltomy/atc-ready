@@ -95,8 +95,10 @@ export class AviationTrafficGenerator {
     return Math.random() * (max - min) + min;
   }
 
-  private roundToNearest10(value: number): number {
-    return Math.round(value / 10) * 10;
+  private roundToNearestFL(value: number): number {
+    // Round to nearest flight level (nearest 1000 feet, then to hundreds for display)
+    const fl = Math.round(value / 1000) * 1000;
+    return Math.round(fl / 100) * 100; // Ensure it's in hundreds
   }
 
   private generateHistory(position: { x: number; y: number }, heading: number, speed: number): { x: number; y: number }[] {
@@ -208,28 +210,28 @@ export class AviationTrafficGenerator {
     // If no overlap, use individual ranges but keep them closer
     if (minAltitude > maxAltitude) {
       // Use each aircraft's optimal altitude range
-      const targetAltitude = this.roundToNearest10(this.rnd(targetType.altitude.min, targetType.altitude.max));
-      const intruderAltitude = this.roundToNearest10(this.rnd(intruderType.altitude.min, intruderType.altitude.max));
+      const targetAltitude = this.roundToNearestFL(this.rnd(targetType.altitude.min, targetType.altitude.max));
+      const intruderAltitude = this.roundToNearestFL(this.rnd(intruderType.altitude.min, intruderType.altitude.max));
       return { targetAltitude, intruderAltitude };
     }
     
     // Generate altitudes within the overlapping range, with some separation for realism
-    const baseAltitude = this.roundToNearest10(this.rnd(minAltitude, maxAltitude));
+    const baseAltitude = this.roundToNearestFL(this.rnd(minAltitude, maxAltitude));
     
     // Add some vertical separation (typically 1000-3000 feet in controlled airspace)
     const separations = [-3000, -2000, -1000, 0, 1000, 2000, 3000];
     const separation = separations[this.rnd(0, separations.length - 1)];
     
     let targetAltitude = baseAltitude;
-    let intruderAltitude = this.roundToNearest10(baseAltitude + separation);
+    let intruderAltitude = this.roundToNearestFL(baseAltitude + separation);
     
     // Ensure both altitudes are within their respective aircraft limits
     targetAltitude = Math.max(targetType.altitude.min, Math.min(targetType.altitude.max, targetAltitude));
     intruderAltitude = Math.max(intruderType.altitude.min, Math.min(intruderType.altitude.max, intruderAltitude));
     
     return { 
-      targetAltitude: this.roundToNearest10(targetAltitude), 
-      intruderAltitude: this.roundToNearest10(intruderAltitude) 
+      targetAltitude: this.roundToNearestFL(targetAltitude), 
+      intruderAltitude: this.roundToNearestFL(intruderAltitude) 
     };
   }
 
@@ -277,7 +279,7 @@ export class AviationTrafficGenerator {
   }
 
   private generateAircraft(acType: AcType, isVFR: boolean, position: { x: number; y: number }, heading: number, speed: number, altitude?: number): Ac {
-    const level = altitude ? this.roundToNearest10(altitude) : this.roundToNearest10(this.rnd(acType.altitude.min, acType.altitude.max));
+    const level = altitude ? this.roundToNearestFL(altitude) : this.roundToNearestFL(this.rnd(acType.altitude.min, acType.altitude.max));
     const callsign = this.generateCallsign(acType, isVFR);
     
     let levelChange: { to: number; dir: '↑'|'↓' } | undefined;
@@ -287,7 +289,7 @@ export class AviationTrafficGenerator {
       const change = direction === '↑' ? this.rnd(1, 3) : this.rnd(-3, -1);
       const newFL = Math.max(10, Math.min(410, currentFL + change * 10));
       levelChange = { 
-        to: this.roundToNearest10(newFL * 100), 
+        to: this.roundToNearestFL(newFL * 100), 
         dir: direction 
       };
     }
@@ -411,7 +413,7 @@ export class AviationTrafficGenerator {
     if (intersectionDistance < 2 || intersectionDistance > 6) return null;
     
     const asymmetry = Math.abs(intersection.targetDist - intersection.intruderDist);
-    if (asymmetry > 2) return null;
+    if (asymmetry > 2) return null; // As per notes: ±2 miles margin for realism
     
     return this.buildExercise(target, intruder, 'crossing left to right', clock, Math.round(distance));
   }
@@ -449,7 +451,7 @@ export class AviationTrafficGenerator {
     if (intersectionDistance < 2 || intersectionDistance > 6) return null;
     
     const asymmetry = Math.abs(intersection.targetDist - intersection.intruderDist);
-    if (asymmetry > 2) return null;
+    if (asymmetry > 2) return null; // As per notes: ±2 miles margin for realism
     
     return this.buildExercise(target, intruder, 'crossing right to left', clock, Math.round(distance));
   }
@@ -489,7 +491,7 @@ export class AviationTrafficGenerator {
     if (intersectionDistance < 2 || intersectionDistance > 6) return null;
     
     const asymmetry = Math.abs(intersection.targetDist - intersection.intruderDist);
-    if (asymmetry > 2) return null;
+    if (asymmetry > 2) return null; // As per notes: ±2 miles margin for realism
     
     return this.buildExercise(target, intruder, 'converging', clock, Math.round(distance));
   }
@@ -529,9 +531,9 @@ export class AviationTrafficGenerator {
     const intersectionDistance = Math.sqrt(intersection.x * intersection.x + intersection.y * intersection.y);
     if (intersectionDistance < 2 || intersectionDistance > 6) return null;
     
-    // For opposite direction, intersection should be halfway (more lenient)
+    // For opposite direction, intersection should be halfway (stricter requirement)
     const asymmetry = Math.abs(intersection.targetDist - intersection.intruderDist);
-    if (asymmetry > 1.0) return null; // Slightly more lenient
+    if (asymmetry > 1.5) return null; // Stricter for opposite direction as per notes
     
     return this.buildExercise(target, intruder, 'opposite direction', clock, Math.round(distance));
   }
@@ -548,8 +550,8 @@ export class AviationTrafficGenerator {
     const intruderX = Math.sin(relativeAngle) * distance;
     const intruderY = Math.cos(relativeAngle) * distance;
     
-    // Same direction with small variation
-    let intruderHeading = targetHeading + this.rndFloat(-10, 10); // Reduced variation
+    // Same direction with small variation for overtaking
+    let intruderHeading = targetHeading + this.rndFloat(-15, 15); // Allow more variation for intersection
     if (intruderHeading < 0) intruderHeading += 360;
     if (intruderHeading >= 360) intruderHeading -= 360;
     
@@ -558,10 +560,10 @@ export class AviationTrafficGenerator {
     const { targetAltitude, intruderAltitude } = this.generateRealisticAltitudes(targetType, intruderType, targetIsVFR, intruderIsVFR);
     
     // Use more flexible speed selection for overtaking
-    const targetSpeed = this.rnd(Math.max(80, targetType.speed.min), Math.min(targetType.speed.max, 250)); // Cap target speed lower
-    // Ensure intruder is faster for overtaking with smaller minimum difference
-    const minIntruderSpeed = targetSpeed + 10; // Reduced from 20
-    const maxIntruderSpeed = Math.min(intruderType.speed.max, 450); // Allow higher speeds
+    const targetSpeed = this.rnd(Math.max(60, targetType.speed.min), Math.min(targetType.speed.max, 280)); // Cap target speed lower
+    // Ensure intruder is faster for overtaking with reasonable minimum difference
+    const minIntruderSpeed = targetSpeed + 15; // Reasonable speed difference
+    const maxIntruderSpeed = Math.min(intruderType.speed.max, 400); // Allow higher speeds
     
     if (minIntruderSpeed > maxIntruderSpeed) {
       return null; // Can't make intruder faster, try again
@@ -580,7 +582,7 @@ export class AviationTrafficGenerator {
     
     // More lenient asymmetry check for overtaking
     const asymmetry = Math.abs(intersection.targetDist - intersection.intruderDist);
-    if (asymmetry > 3) return null; // Increased from 2 to 3
+    if (asymmetry > 2) return null; // As per notes: ±2 miles margin for realism
     
     return this.buildExercise(target, intruder, 'overtaking', clock, Math.round(distance));
   }
