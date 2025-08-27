@@ -381,7 +381,7 @@ public generateExercise(): Exercise {
     const target: Ac = {
       callsign: this.generateCallsign(targetVFR, false),
       wtc: targetType.wtc,
-      type: { name: targetType.name },
+      type: { name: targetType.name, type: targetType.name.substring(0, 4) },
       isVFR: targetVFR,
       heading: this.rnd(0, 359),
       level: this.generateLevel(targetVFR),
@@ -457,7 +457,7 @@ public generateExercise(): Exercise {
     const intruder: Ac = {
       callsign: this.generateCallsign(intruderVFR, intruderMil),
       wtc: intruderType.wtc,
-      type: { name: intruderType.name },
+      type: { name: intruderType.name, type: intruderType.name.substring(0, 4) },
       isVFR: intruderVFR,
       heading: intruderHeading,
       level: intruderLevel,
@@ -506,7 +506,7 @@ public generateExercise(): Exercise {
   const target: Ac = {
     callsign: this.generateCallsign(targetVFR, false),
     wtc: targetType.wtc,
-    type: { name: targetType.name },
+    type: { name: targetType.name, type: targetType.name.substring(0, 4) },
     isVFR: targetVFR,
     heading: this.rnd(0, 359),
     level: this.generateLevel(targetVFR),
@@ -525,7 +525,7 @@ public generateExercise(): Exercise {
   const intruder: Ac = {
     callsign: this.generateCallsign(intruderVFR, false),
     wtc: intruderType.wtc,
-    type: { name: intruderType.name },
+    type: { name: intruderType.name, type: intruderType.name.substring(0, 4) },
     isVFR: intruderVFR,
     heading: (target.heading + 180) % 360, // Head-on
     level: this.generateIntruderLevel(target.level, intruderVFR),
