@@ -1,0 +1,41 @@
+Vision for the Finished ATCReady Training Module
+1. Overall Concept
+The app is a mobile-style, single-screen training tool for ATC trainees to practice giving traffic information. It should feel smooth, app-like (no scrolling), with fast, repeatable exercises that simulate radar scenarios.
+
+2. User Flow
+Start screen
+Shows logo, short explanation, and a "Start First Exercise" button
+Exercise screen
+A radar screen with a generated scenario (target + intruder)
+Below the radar: a button to “Show Answer” and “Next Scenario”
+Clicking “Show Answer” replaces this button with the actual answer and replaces the “next scenario” button with 4 self-assessment buttons: Correct, Almost, Hard, Again
+Clicking “Again” restarts the same exercise (essentially hides the answer)
+After clicking the other 3 options, a new scenario is generated
+End screen (after 10 exercises)
+Displays score, performance breakdown, and option to restart
+
+3. Design
+Minimalist, mobile-first layout
+Responsive in portrait mode, with a future landscape layout planned
+No scrolling — everything must fit within 100vh
+Clean UI with clearly separated sections (logo, radar, buttons)
+
+4. Radar Screen
+A centered SVG radar with 3 rings (5, 10, 15 NM)
+Aircraft A always in the center (square + label)
+Aircraft B placed dynamically based on clock position and distance
+
+5. Scenario Logic
+Each scenario includes:
+Aircraft A (target) and B (intruder) properties
+Situation parameters: clock, distance, direction, level difference, etc.
+
+6. Scoring
+After each exercise, user selects one of 4 buttons
+Scoring system:
+Correct = 3 pts
+Almost = 2 pts
+Hard = 1 pt
+Again = 0 pts
+After 10 scenarios, score and summary are shown
+A button “Start Over” appears, when clicked goes back to a new set of 10 exercises 

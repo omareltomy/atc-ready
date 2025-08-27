@@ -99,41 +99,6 @@ export class AviationTrafficGenerator {
     return Math.round(value / 10) * 10;
   }
 
-  private generateHistory(position: { x: number; y: number }, heading: number, speed: number): { x: number; y: number }[] {
-    const history: { x: number; y: number }[] = [];
-    
-    // Generate history dots based on speed (from notes: linked to min 60 and max 350 speed)
-    // More history dots for faster aircraft, fewer for slower
-    const minSpeed = 60;
-    const maxSpeed = 350;
-    const normalizedSpeed = Math.max(0, Math.min(1, (speed - minSpeed) / (maxSpeed - minSpeed)));
-    
-    // Number of history dots: 2-6 based on speed
-    const numDots = Math.floor(2 + normalizedSpeed * 4);
-    
-    // Distance between dots: faster aircraft have dots further apart
-    const minSpacing = 0.3; // NM
-    const maxSpacing = 1.0; // NM  
-    const spacing = minSpacing + normalizedSpeed * (maxSpacing - minSpacing);
-    
-    // Calculate reverse heading (where aircraft came from)
-    const reverseHeading = (heading + 180) % 360;
-    const radians = reverseHeading * Math.PI / 180;
-    const dx = Math.sin(radians);
-    const dy = Math.cos(radians);
-    
-    // Generate dots going backwards from current position
-    for (let i = 1; i <= numDots; i++) {
-      const distance = spacing * i;
-      history.push({
-        x: position.x + dx * distance,
-        y: position.y + dy * distance
-      });
-    }
-    
-    return history;
-  }
-
   private selectDirection(): string {
     const totalWeight = this.directionWeights.reduce((sum, item) => sum + item.weight, 0);
     const random = Math.random() * totalWeight;
@@ -149,103 +114,14 @@ export class AviationTrafficGenerator {
     return 'crossing left to right'; // fallback
   }
 
-  private selectCompatibleAircraft(): { targetType: AcType; intruderType: AcType; targetIsVFR: boolean; intruderIsVFR: boolean } {
-    // Define aircraft categories with realistic pairing
-    const lowAltitude = [...VFR_TYPES]; // VFR aircraft (1,000-5,500 feet)
-    const mediumAltitude = [...IFR_TYPES.filter(ac => ac.altitude.max <= 30000)]; // Regional/smaller commercial (5,000-30,000 feet)
-    const highAltitude = [...IFR_TYPES.filter(ac => ac.altitude.max > 30000)]; // Large commercial (10,000-43,000 feet)
-    const militaryLow = [MIL_TYPES[2]]; // UH-60 helicopter (500-8,000 feet)
-    const militaryMed = [MIL_TYPES[1]]; // C-130 (1,000-30,000 feet)
-    const militaryHigh = [MIL_TYPES[0], MIL_TYPES[3], MIL_TYPES[4]]; // F-16, F/A-18, KC-135 (high altitude capable)
-
-    // Define compatible pairing groups
-    const compatibleGroups = [
-      { name: 'VFR_Traffic', aircraft: lowAltitude, isVFR: true },
-      { name: 'Regional_IFR', aircraft: mediumAltitude, isVFR: false },
-      { name: 'Commercial_IFR', aircraft: highAltitude, isVFR: false },
-      { name: 'Military_Low', aircraft: militaryLow, isVFR: false },
-      { name: 'Military_Med', aircraft: militaryMed, isVFR: false },
-      { name: 'Military_High', aircraft: militaryHigh, isVFR: false }
-    ];
-
-    // Allow some cross-group pairing for realism (but within reasonable altitude ranges)
-    const compatiblePairings = [
-      // Same category pairings (most common)
-      ['VFR_Traffic', 'VFR_Traffic'],
-      ['Regional_IFR', 'Regional_IFR'],
-      ['Commercial_IFR', 'Commercial_IFR'],
-      ['Military_Low', 'Military_Low'],
-      ['Military_Med', 'Military_Med'],
-      ['Military_High', 'Military_High'],
-      
-      // Cross-category pairings (less common but realistic)
-      ['Regional_IFR', 'Commercial_IFR'], // Regional and commercial mix
-      ['Military_Med', 'Regional_IFR'], // Military transport with civilian
-      ['Military_High', 'Commercial_IFR'], // High altitude military with commercial
-    ];
-
-    // Select a random compatible pairing
-    const selectedPairing = compatiblePairings[this.rnd(0, compatiblePairings.length - 1)];
-    const targetGroup = compatibleGroups.find(g => g.name === selectedPairing[0])!;
-    const intruderGroup = compatibleGroups.find(g => g.name === selectedPairing[1])!;
-
-    const targetType = targetGroup.aircraft[this.rnd(0, targetGroup.aircraft.length - 1)];
-    const intruderType = intruderGroup.aircraft[this.rnd(0, intruderGroup.aircraft.length - 1)];
-
-    return {
-      targetType,
-      intruderType,
-      targetIsVFR: targetGroup.isVFR,
-      intruderIsVFR: intruderGroup.isVFR
-    };
-  }
-
-  private generateRealisticAltitudes(targetType: AcType, intruderType: AcType, targetIsVFR: boolean, intruderIsVFR: boolean): { targetAltitude: number; intruderAltitude: number } {
-    // Find the overlapping altitude range for both aircraft
-    const minAltitude = Math.max(targetType.altitude.min, intruderType.altitude.min);
-    const maxAltitude = Math.min(targetType.altitude.max, intruderType.altitude.max);
-    
-    // If no overlap, use individual ranges but keep them closer
-    if (minAltitude > maxAltitude) {
-      // Use each aircraft's optimal altitude range
-      const targetAltitude = this.roundToNearest10(this.rnd(targetType.altitude.min, targetType.altitude.max));
-      const intruderAltitude = this.roundToNearest10(this.rnd(intruderType.altitude.min, intruderType.altitude.max));
-      return { targetAltitude, intruderAltitude };
-    }
-    
-    // Generate altitudes within the overlapping range, with some separation for realism
-    const baseAltitude = this.roundToNearest10(this.rnd(minAltitude, maxAltitude));
-    
-    // Add some vertical separation (typically 1000-3000 feet in controlled airspace)
-    const separations = [-3000, -2000, -1000, 0, 1000, 2000, 3000];
-    const separation = separations[this.rnd(0, separations.length - 1)];
-    
-    let targetAltitude = baseAltitude;
-    let intruderAltitude = this.roundToNearest10(baseAltitude + separation);
-    
-    // Ensure both altitudes are within their respective aircraft limits
-    targetAltitude = Math.max(targetType.altitude.min, Math.min(targetType.altitude.max, targetAltitude));
-    intruderAltitude = Math.max(intruderType.altitude.min, Math.min(intruderType.altitude.max, intruderAltitude));
-    
-    return { 
-      targetAltitude: this.roundToNearest10(targetAltitude), 
-      intruderAltitude: this.roundToNearest10(intruderAltitude) 
-    };
-  }
-
   private generateCallsign(acType: AcType, isVFR: boolean): string {
     if (MIL_TYPES.includes(acType)) {
       const base = this.militaryCallsigns[this.rnd(0, this.militaryCallsigns.length - 1)];
       return base + this.rnd(1, 99);
     } else if (isVFR) {
-      const prefixes = ['N', 'G-', 'D-E', 'PH', 'OO', 'F-', 'C-'];
-      const prefix = prefixes[this.rnd(0, prefixes.length - 1)];
-      if (prefix === 'N') {
-        return 'N' + this.rnd(100, 999) + String.fromCharCode(65 + this.rnd(0, 25)) + String.fromCharCode(65 + this.rnd(0, 25));
-      } else {
-        const numbers = String(this.rnd(100, 999));
-        return prefix + numbers;
-      }
+      const prefix = this.gaCallsigns[this.rnd(0, this.gaCallsigns.length - 1)];
+      const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+      return prefix + suffix;
     } else {
       const airline = this.airlines[this.rnd(0, this.airlines.length - 1)];
       const number = this.rnd(100, 9999);
@@ -270,14 +146,14 @@ export class AviationTrafficGenerator {
       'C-130': 'C130',
       'UH-60': 'UH60',
       'F/A-18': 'F18',
-      'KC-135': 'KC13'
+      'KC-135': 'KC135'
     };
     
-    return typeMap[acType.name] || acType.name.substring(0, 4);
+    return typeMap[acType.name] || acType.name;
   }
 
-  private generateAircraft(acType: AcType, isVFR: boolean, position: { x: number; y: number }, heading: number, speed: number, altitude?: number): Ac {
-    const level = altitude ? this.roundToNearest10(altitude) : this.roundToNearest10(this.rnd(acType.altitude.min, acType.altitude.max));
+  private generateAircraft(acType: AcType, isVFR: boolean, position: { x: number; y: number }, heading: number, speed: number): Ac {
+    const level = this.roundToNearest10(this.rnd(acType.altitude.min, acType.altitude.max));
     const callsign = this.generateCallsign(acType, isVFR);
     
     let levelChange: { to: number; dir: '↑'|'↓' } | undefined;
@@ -305,7 +181,7 @@ export class AviationTrafficGenerator {
       levelChange,
       speed,
       position,
-      history: this.generateHistory(position, heading, speed)
+      history: []
     };
   }
 
@@ -339,8 +215,7 @@ export class AviationTrafficGenerator {
 
   private generateScenarioByDirection(direction: string): Exercise {
     let attempts = 0;
-    // More attempts for overtaking scenarios as they're harder to generate
-    const maxAttempts = direction === 'overtaking' ? 300 : 100;
+    const maxAttempts = 100;
     
     while (attempts < maxAttempts) {
       attempts++;
@@ -393,15 +268,19 @@ export class AviationTrafficGenerator {
     let intruderHeading = targetHeading + convergenceAngle;
     if (intruderHeading >= 360) intruderHeading -= 360;
     
-    // Select compatible aircraft types and realistic altitudes
-    const { targetType, intruderType, targetIsVFR, intruderIsVFR } = this.selectCompatibleAircraft();
-    const { targetAltitude, intruderAltitude } = this.generateRealisticAltitudes(targetType, intruderType, targetIsVFR, intruderIsVFR);
+    // Generate aircraft
+    const allTypes = [...VFR_TYPES, ...IFR_TYPES, ...MIL_TYPES];
+    const targetType = allTypes[this.rnd(0, allTypes.length - 1)];
+    const intruderType = allTypes[this.rnd(0, allTypes.length - 1)];
+    
+    const targetIsVFR = VFR_TYPES.includes(targetType);
+    const intruderIsVFR = VFR_TYPES.includes(intruderType);
     
     const targetSpeed = this.rnd(targetType.speed.min, targetType.speed.max);
     const intruderSpeed = this.rnd(intruderType.speed.min, intruderType.speed.max);
     
-    const target = this.generateAircraft(targetType, targetIsVFR, { x: 0, y: 0 }, targetHeading, targetSpeed, targetAltitude);
-    const intruder = this.generateAircraft(intruderType, intruderIsVFR, { x: intruderX, y: intruderY }, intruderHeading, intruderSpeed, intruderAltitude);
+    const target = this.generateAircraft(targetType, targetIsVFR, { x: 0, y: 0 }, targetHeading, targetSpeed);
+    const intruder = this.generateAircraft(intruderType, intruderIsVFR, { x: intruderX, y: intruderY }, intruderHeading, intruderSpeed);
     
     // Validate intersection
     const intersection = this.calculateIntersectionPoint(target, intruder);
@@ -432,15 +311,18 @@ export class AviationTrafficGenerator {
     let intruderHeading = targetHeading - convergenceAngle;
     if (intruderHeading < 0) intruderHeading += 360;
     
-    // Select compatible aircraft types and realistic altitudes
-    const { targetType, intruderType, targetIsVFR, intruderIsVFR } = this.selectCompatibleAircraft();
-    const { targetAltitude, intruderAltitude } = this.generateRealisticAltitudes(targetType, intruderType, targetIsVFR, intruderIsVFR);
+    const allTypes = [...VFR_TYPES, ...IFR_TYPES, ...MIL_TYPES];
+    const targetType = allTypes[this.rnd(0, allTypes.length - 1)];
+    const intruderType = allTypes[this.rnd(0, allTypes.length - 1)];
+    
+    const targetIsVFR = VFR_TYPES.includes(targetType);
+    const intruderIsVFR = VFR_TYPES.includes(intruderType);
     
     const targetSpeed = this.rnd(targetType.speed.min, targetType.speed.max);
     const intruderSpeed = this.rnd(intruderType.speed.min, intruderType.speed.max);
     
-    const target = this.generateAircraft(targetType, targetIsVFR, { x: 0, y: 0 }, targetHeading, targetSpeed, targetAltitude);
-    const intruder = this.generateAircraft(intruderType, intruderIsVFR, { x: intruderX, y: intruderY }, intruderHeading, intruderSpeed, intruderAltitude);
+    const target = this.generateAircraft(targetType, targetIsVFR, { x: 0, y: 0 }, targetHeading, targetSpeed);
+    const intruder = this.generateAircraft(intruderType, intruderIsVFR, { x: intruderX, y: intruderY }, intruderHeading, intruderSpeed);
     
     const intersection = this.calculateIntersectionPoint(target, intruder);
     if (!intersection) return null;
@@ -472,15 +354,18 @@ export class AviationTrafficGenerator {
     if (intruderHeading < 0) intruderHeading += 360;
     if (intruderHeading >= 360) intruderHeading -= 360;
     
-    // Select compatible aircraft types and realistic altitudes
-    const { targetType, intruderType, targetIsVFR, intruderIsVFR } = this.selectCompatibleAircraft();
-    const { targetAltitude, intruderAltitude } = this.generateRealisticAltitudes(targetType, intruderType, targetIsVFR, intruderIsVFR);
+    const allTypes = [...VFR_TYPES, ...IFR_TYPES, ...MIL_TYPES];
+    const targetType = allTypes[this.rnd(0, allTypes.length - 1)];
+    const intruderType = allTypes[this.rnd(0, allTypes.length - 1)];
+    
+    const targetIsVFR = VFR_TYPES.includes(targetType);
+    const intruderIsVFR = VFR_TYPES.includes(intruderType);
     
     const targetSpeed = this.rnd(targetType.speed.min, targetType.speed.max);
     const intruderSpeed = this.rnd(intruderType.speed.min, intruderType.speed.max);
     
-    const target = this.generateAircraft(targetType, targetIsVFR, { x: 0, y: 0 }, targetHeading, targetSpeed, targetAltitude);
-    const intruder = this.generateAircraft(intruderType, intruderIsVFR, { x: intruderX, y: intruderY }, intruderHeading, intruderSpeed, intruderAltitude);
+    const target = this.generateAircraft(targetType, targetIsVFR, { x: 0, y: 0 }, targetHeading, targetSpeed);
+    const intruder = this.generateAircraft(intruderType, intruderIsVFR, { x: intruderX, y: intruderY }, intruderHeading, intruderSpeed);
     
     const intersection = this.calculateIntersectionPoint(target, intruder);
     if (!intersection) return null;
@@ -500,28 +385,31 @@ export class AviationTrafficGenerator {
     const distance = this.rndFloat(4, 9);
     const clock = 12;
     
-    // Allow ±5° variation for clock 12 while keeping it clearly at 12
-    const clockVariation = this.rndFloat(-5, 5);
+    // Allow ±10° variation for clock 12 while keeping it clearly at 12
+    const clockVariation = this.rndFloat(-10, 10);
     const relativeAngle = (targetHeading + clockVariation) * Math.PI / 180;
     
     const intruderX = Math.sin(relativeAngle) * distance;
     const intruderY = Math.cos(relativeAngle) * distance;
     
-    // Opposite direction: 175-185° (more forgiving range)
-    const oppositeHeading = targetHeading + 180;
-    let intruderHeading = oppositeHeading + this.rndFloat(-5, 5);
-    if (intruderHeading >= 360) intruderHeading -= 360;
-    if (intruderHeading < 0) intruderHeading += 360;
+    // Opposite direction: 170-180°
+    const convergenceAngle = this.rndFloat(170, 180);
     
-    // Select compatible aircraft types and realistic altitudes
-    const { targetType, intruderType, targetIsVFR, intruderIsVFR } = this.selectCompatibleAircraft();
-    const { targetAltitude, intruderAltitude } = this.generateRealisticAltitudes(targetType, intruderType, targetIsVFR, intruderIsVFR);
+    let intruderHeading = targetHeading + 180 + this.rndFloat(-10, 10);
+    if (intruderHeading >= 360) intruderHeading -= 360;
+    
+    const allTypes = [...VFR_TYPES, ...IFR_TYPES, ...MIL_TYPES];
+    const targetType = allTypes[this.rnd(0, allTypes.length - 1)];
+    const intruderType = allTypes[this.rnd(0, allTypes.length - 1)];
+    
+    const targetIsVFR = VFR_TYPES.includes(targetType);
+    const intruderIsVFR = VFR_TYPES.includes(intruderType);
     
     const targetSpeed = this.rnd(targetType.speed.min, targetType.speed.max);
     const intruderSpeed = this.rnd(intruderType.speed.min, intruderType.speed.max);
     
-    const target = this.generateAircraft(targetType, targetIsVFR, { x: 0, y: 0 }, targetHeading, targetSpeed, targetAltitude);
-    const intruder = this.generateAircraft(intruderType, intruderIsVFR, { x: intruderX, y: intruderY }, intruderHeading, intruderSpeed, intruderAltitude);
+    const target = this.generateAircraft(targetType, targetIsVFR, { x: 0, y: 0 }, targetHeading, targetSpeed);
+    const intruder = this.generateAircraft(intruderType, intruderIsVFR, { x: intruderX, y: intruderY }, intruderHeading, intruderSpeed);
     
     const intersection = this.calculateIntersectionPoint(target, intruder);
     if (!intersection) return null;
@@ -529,9 +417,9 @@ export class AviationTrafficGenerator {
     const intersectionDistance = Math.sqrt(intersection.x * intersection.x + intersection.y * intersection.y);
     if (intersectionDistance < 2 || intersectionDistance > 6) return null;
     
-    // For opposite direction, intersection should be halfway (more lenient)
+    // For opposite direction, intersection should be halfway (strict requirement)
     const asymmetry = Math.abs(intersection.targetDist - intersection.intruderDist);
-    if (asymmetry > 1.0) return null; // Slightly more lenient
+    if (asymmetry > 0.5) return null; // Stricter for opposite direction
     
     return this.buildExercise(target, intruder, 'opposite direction', clock, Math.round(distance));
   }
@@ -549,28 +437,23 @@ export class AviationTrafficGenerator {
     const intruderY = Math.cos(relativeAngle) * distance;
     
     // Same direction with small variation
-    let intruderHeading = targetHeading + this.rndFloat(-10, 10); // Reduced variation
+    let intruderHeading = targetHeading + this.rndFloat(-15, 15);
     if (intruderHeading < 0) intruderHeading += 360;
     if (intruderHeading >= 360) intruderHeading -= 360;
     
-    // Select compatible aircraft types and realistic altitudes
-    const { targetType, intruderType, targetIsVFR, intruderIsVFR } = this.selectCompatibleAircraft();
-    const { targetAltitude, intruderAltitude } = this.generateRealisticAltitudes(targetType, intruderType, targetIsVFR, intruderIsVFR);
+    const allTypes = [...VFR_TYPES, ...IFR_TYPES, ...MIL_TYPES];
+    const targetType = allTypes[this.rnd(0, allTypes.length - 1)];
+    const intruderType = allTypes[this.rnd(0, allTypes.length - 1)];
     
-    // Use more flexible speed selection for overtaking
-    const targetSpeed = this.rnd(Math.max(80, targetType.speed.min), Math.min(targetType.speed.max, 250)); // Cap target speed lower
-    // Ensure intruder is faster for overtaking with smaller minimum difference
-    const minIntruderSpeed = targetSpeed + 10; // Reduced from 20
-    const maxIntruderSpeed = Math.min(intruderType.speed.max, 450); // Allow higher speeds
+    const targetIsVFR = VFR_TYPES.includes(targetType);
+    const intruderIsVFR = VFR_TYPES.includes(intruderType);
     
-    if (minIntruderSpeed > maxIntruderSpeed) {
-      return null; // Can't make intruder faster, try again
-    }
+    const targetSpeed = this.rnd(targetType.speed.min, targetType.speed.max);
+    // Ensure intruder is faster for overtaking
+    const intruderSpeed = this.rnd(targetSpeed + 10, Math.max(targetSpeed + 20, intruderType.speed.max));
     
-    const intruderSpeed = this.rnd(minIntruderSpeed, maxIntruderSpeed);
-    
-    const target = this.generateAircraft(targetType, targetIsVFR, { x: 0, y: 0 }, targetHeading, targetSpeed, targetAltitude);
-    const intruder = this.generateAircraft(intruderType, intruderIsVFR, { x: intruderX, y: intruderY }, intruderHeading, intruderSpeed, intruderAltitude);
+    const target = this.generateAircraft(targetType, targetIsVFR, { x: 0, y: 0 }, targetHeading, targetSpeed);
+    const intruder = this.generateAircraft(intruderType, intruderIsVFR, { x: intruderX, y: intruderY }, intruderHeading, intruderSpeed);
     
     const intersection = this.calculateIntersectionPoint(target, intruder);
     if (!intersection) return null;
@@ -578,9 +461,8 @@ export class AviationTrafficGenerator {
     const intersectionDistance = Math.sqrt(intersection.x * intersection.x + intersection.y * intersection.y);
     if (intersectionDistance < 2 || intersectionDistance > 6) return null;
     
-    // More lenient asymmetry check for overtaking
     const asymmetry = Math.abs(intersection.targetDist - intersection.intruderDist);
-    if (asymmetry > 3) return null; // Increased from 2 to 3
+    if (asymmetry > 2) return null;
     
     return this.buildExercise(target, intruder, 'overtaking', clock, Math.round(distance));
   }
