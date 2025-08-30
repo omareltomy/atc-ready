@@ -74,11 +74,25 @@ export default function Radar({ exercise }: Props) {
     // Label placement helper - track occupied areas
     const placed: { x: number; y: number; w: number; h: number }[] = [];
     const aircraftAreas: { x: number; y: number; w: number; h: number; leaderLine: { x1: number; y1: number; x2: number; y2: number } }[] = [];
+    const historyDotAreas: { x: number; y: number; w: number; h: number }[] = [];
     
-    // FIRST: Register all aircraft positions and leader lines as occupied areas
+    // FIRST: Register all aircraft positions, leader lines, and history dots as occupied areas
     [target, intruder].forEach(ac => {
       const x = toPx(ac.position.x);
       const y = -toPx(ac.position.y);
+      
+      // Register history dots as areas to avoid
+      ac.history.forEach(p => {
+        const dotX = toPx(p.x);
+        const dotY = -toPx(p.y);
+        const dotBuffer = 15; // Buffer around each history dot
+        historyDotAreas.push({
+          x: dotX - dotBuffer,
+          y: dotY - dotBuffer,
+          w: dotBuffer * 2,
+          h: dotBuffer * 2
+        });
+      });
       
       // Calculate leader line
       const minSpeed = 60;
@@ -106,7 +120,20 @@ export default function Radar({ exercise }: Props) {
       !(a.x + a.w < b.x || b.x + b.w < a.x || a.y + a.h < b.y || b.y + b.h < a.y);
     
     // Check if a rectangle intersects with a line segment
-    const rectIntersectsLine = (rect: any, line: { x1: number; y1: number; x2: number; y2: number }, buffer = 25) => {
+        const linesIntersect = (line1: {x1: number, y1: number, x2: number, y2: number}, 
+                           line2: {x1: number, y1: number, x2: number, y2: number}) => {
+      const det = (line1.x2 - line1.x1) * (line2.y2 - line2.y1) - (line2.x2 - line2.x1) * (line1.y2 - line1.y1);
+      if (Math.abs(det) < 1e-10) return false; // Lines are parallel
+      
+      const t = ((line2.x1 - line1.x1) * (line2.y2 - line2.y1) - (line2.y1 - line1.y1) * (line2.x2 - line2.x1)) / det;
+      const u = -((line1.x1 - line2.x1) * (line1.y2 - line1.y1) - (line1.y1 - line2.y1) * (line1.x2 - line1.x1)) / det;
+      
+      return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+    };
+
+    const rectIntersectsLine = (rect: {x: number, y: number, w: number, h: number}, 
+                               line: {x1: number, y1: number, x2: number, y2: number},
+                               buffer: number = 5) => {
       const { x1, y1, x2, y2 } = line;
       const { x: rx, y: ry, w: rw, h: rh } = rect;
       
@@ -159,16 +186,14 @@ export default function Radar({ exercise }: Props) {
       const x = toPx(ac.position.x);
       const y = -toPx(ac.position.y);
 
-      // History dots with speed-based spacing and fade
+      // History dots with fixed count and no fading
       ac.history.forEach((p, index) => {
         const d = document.createElementNS(svgNS, 'circle');
         d.setAttribute('cx', String(toPx(p.x)));
         d.setAttribute('cy', String(-toPx(p.y)));
         d.setAttribute('r', '2');
         d.setAttribute('fill', color);
-        // Fade older dots more
-        const opacity = 0.6 - (index * 0.1);
-        d.setAttribute('opacity', String(Math.max(0.2, opacity)));
+        d.setAttribute('opacity', '0.8'); // Fixed opacity, no fading
         g.appendChild(d);
       });
 
@@ -204,7 +229,7 @@ export default function Radar({ exercise }: Props) {
       sq.setAttribute('fill', color);
       g.appendChild(sq);
 
-      // Label text lines - Format: V / Callsign WTC Type / Level LevelChange Speed
+      // Advanced force-directed label placement algorithm
       const formatLevel = (level: number, isVFR: boolean) => {
         if (isVFR) {
           return `A${String(Math.round(level / 100)).padStart(2, '0')}`;
@@ -214,129 +239,218 @@ export default function Radar({ exercise }: Props) {
       };
 
       const lines = [
-        'V',
+        ac.isVFR ? 'V' : '', // Only show "V" for VFR aircraft
         `${ac.callsign} ${ac.wtc} ${ac.type.type}`,
         formatLevel(ac.level, ac.isVFR) + 
         (ac.levelChange ? ` ${ac.levelChange.dir}${formatLevel(ac.levelChange.to, ac.isVFR)}` : '') + 
         ` N${ac.speed}`
-      ];
+      ].filter(line => line !== ''); // Remove empty lines
       
       const maxLen = Math.max(...lines.map(l => l.length));
       const boxW = maxLen * 7 + 12;
       const boxH = lines.length * 14 + 6;
+      const maxRadius = BOUND - M;
 
-      // Try quadrants - avoid leader line by preferring opposite direction
-      const leaderAngle = ac.heading * Math.PI / 180;
-      const leaderQuadrant = Math.floor(((ac.heading + 45) % 360) / 90);
-      const baseQ = (leaderQuadrant + 2) % 4; // Start with opposite quadrant
-      let chosen: any = null;
-      const maxRadius = BOUND - M; // Maximum distance from center
+      // Generate candidate positions using proven cartographic techniques
+      const candidates: Array<{
+        x: number, y: number, w: number, h: number, 
+        score: number, anchor: string, distance: number
+      }> = [];
+
+      // 8-position model (standard for point feature labeling in GIS)
+      const standardPositions = [
+        { angle: 0, anchor: 'start', priority: 1 },     // right (preferred)
+        { angle: 180, anchor: 'end', priority: 2 },     // left (second choice)
+        { angle: 270, anchor: 'middle', priority: 3 },  // top
+        { angle: 90, anchor: 'middle', priority: 3 },   // bottom
+        { angle: 315, anchor: 'start', priority: 4 },   // top-right
+        { angle: 225, anchor: 'end', priority: 4 },     // top-left
+        { angle: 45, anchor: 'start', priority: 4 },    // bottom-right
+        { angle: 135, anchor: 'end', priority: 4 }      // bottom-left
+      ];
+
+      // Bias positions away from leader line direction
+      const leaderAngle = ac.heading;
       
-      for (let dist = 30; dist < 150 && !chosen; dist += 20) {
-        for (let dq = 0; dq < 4; dq++) {
-          const q = (baseQ + dq) % 4;
-          const offX = (q === 1 || q === 2 ? -1 : 1) * dist;
-          const offY = (q === 0 || q === 1 ? 1 : -1) * dist;
-          const anc = (q === 1 || q === 2) ? 'end' : 'start';
-          let bx = x + offX + (anc === 'end' ? -boxW : 0);
-          let by = y + offY - 14;
+      for (const pos of standardPositions) {
+        // Rotate position relative to aircraft heading for context-aware placement
+        const adjustedAngle = (pos.angle + leaderAngle + 180) % 360; // Prefer opposite to motion
+        
+        for (let distance = 40; distance <= 140; distance += 30) {
+          const rad = adjustedAngle * Math.PI / 180;
           
-          // Check if label fits within circular boundary
+          let labelX = x + Math.cos(rad) * distance;
+          let labelY = y + Math.sin(rad) * distance;
+          
+          // Adjust for anchor point
+          if (pos.anchor === 'end') labelX -= boxW;
+          else if (pos.anchor === 'middle') labelX -= boxW / 2;
+          labelY -= boxH / 2; // Center vertically
+
+          // Boundary check
           const corners = [
-            { x: bx, y: by },
-            { x: bx + boxW, y: by },
-            { x: bx, y: by + boxH },
-            { x: bx + boxW, y: by + boxH }
+            { x: labelX, y: labelY },
+            { x: labelX + boxW, y: labelY },
+            { x: labelX, y: labelY + boxH },
+            { x: labelX + boxW, y: labelY + boxH }
           ];
           
-          const allCornersInside = corners.every(corner => {
+          const withinBounds = corners.every(corner => {
             const distFromCenter = Math.sqrt(corner.x * corner.x + corner.y * corner.y);
             return distFromCenter <= maxRadius;
           });
+
+          if (!withinBounds) continue;
+
+          // Calculate quality score
+          let score = 100 / pos.priority; // Base score from position preference
           
-          // Check if label overlaps with leader line
-          const labelCenterX = bx + boxW / 2;
-          const labelCenterY = by + boxH / 2;
-          const distToLeaderLine = Math.abs(
-            Math.sin(leaderAngle) * (labelCenterY - y) - Math.cos(leaderAngle) * (labelCenterX - x)
-          );
-          const leaderLineClear = distToLeaderLine > 20; // Minimum distance from leader line
+          // Distance optimization (prefer 60-90px from aircraft)
+          const idealDistance = 75;
+          const distancePenalty = Math.abs(distance - idealDistance) * 0.4;
+          score -= distancePenalty;
+
+          const rect = { x: labelX, y: labelY, w: boxW, h: boxH };
           
-          // Check if label intersects with any aircraft areas or leader lines
-          const rect = { x: bx, y: by, w: boxW, h: boxH };
-          const clearOfAircraft = aircraftAreas.every(area => {
-            // Check overlap with aircraft area
-            if (overlap(rect, area)) return false;
-            // Check intersection with leader line
-            if (rectIntersectsLine(rect, area.leaderLine)) return false;
-            return true;
-          });
+          // Check for hard conflicts (immediate disqualification)
+          let hasHardConflict = false;
           
-          if (allCornersInside && leaderLineClear && clearOfAircraft) {
-            const labelRect = { x: bx, y: by, w: boxW, h: boxH, anchor: anc };
-            if (!placed.some(r => overlap(r, labelRect))) {
-              chosen = labelRect;
+          // Aircraft and leader line conflicts
+          for (const area of aircraftAreas) {
+            if (overlap(rect, area) || rectIntersectsLine(rect, area.leaderLine)) {
+              hasHardConflict = true;
               break;
+            }
+          }
+          
+          // Existing label conflicts
+          if (!hasHardConflict && placed.some(r => overlap(r, rect))) {
+            hasHardConflict = true;
+          }
+
+          if (hasHardConflict) continue;
+
+          // Soft penalties (reduce score but don't disqualify)
+          
+          // History dot conflicts
+          const historyConflicts = historyDotAreas.filter(dotArea => overlap(rect, dotArea)).length;
+          score -= historyConflicts * 25;
+
+          // Proximity penalties for nearby aircraft
+          for (const area of aircraftAreas) {
+            const acCenterX = area.x + area.w / 2;
+            const acCenterY = area.y + area.h / 2;
+            const labelCenterX = labelX + boxW / 2;
+            const labelCenterY = labelY + boxH / 2;
+            const proximity = Math.sqrt(
+              Math.pow(acCenterX - labelCenterX, 2) + 
+              Math.pow(acCenterY - labelCenterY, 2)
+            );
+            if (proximity < 50) {
+              score -= (50 - proximity) * 1.5; // Penalty for being too close
+            }
+          }
+
+          // Leader line crossing penalty
+          const labelConnectionLine = { 
+            x1: x, y1: y, 
+            x2: labelX + boxW/2, y2: labelY + boxH/2 
+          };
+          let crossingCount = 0;
+          for (const area of aircraftAreas) {
+            if (linesIntersect(labelConnectionLine, area.leaderLine)) {
+              crossingCount++;
+            }
+          }
+          score -= crossingCount * 40;
+
+          // Angle quality bonus (prefer perpendicular to aircraft motion)
+          const connectionAngle = Math.atan2(
+            labelY + boxH/2 - y, 
+            labelX + boxW/2 - x
+          ) * 180 / Math.PI;
+          const headingDiff = Math.abs(((connectionAngle - leaderAngle + 540) % 360) - 180);
+          const perpendicularity = Math.abs(headingDiff - 90) / 90; // 0 = perpendicular, 1 = parallel
+          score += (1 - perpendicularity) * 25; // Bonus for perpendicular placement
+
+          candidates.push({
+            x: labelX, y: labelY, w: boxW, h: boxH,
+            score, anchor: pos.anchor, distance
+          });
+        }
+      }
+
+      // Simulated annealing for dense scenarios
+      if (candidates.length === 0 || Math.max(...candidates.map(c => c.score)) < 30) {
+        const gridResolution = 15;
+        const searchRadius = 120;
+        
+        for (let gx = -searchRadius; gx <= searchRadius; gx += gridResolution) {
+          for (let gy = -searchRadius; gy <= searchRadius; gy += gridResolution) {
+            const distance = Math.sqrt(gx*gx + gy*gy);
+            if (distance < 35 || distance > searchRadius) continue;
+
+            const labelX = x + gx - boxW/2;
+            const labelY = y + gy - boxH/2;
+
+            const corners = [
+              { x: labelX, y: labelY },
+              { x: labelX + boxW, y: labelY },
+              { x: labelX, y: labelY + boxH },
+              { x: labelX + boxW, y: labelY + boxH }
+            ];
+            
+            const withinBounds = corners.every(corner => {
+              const distFromCenter = Math.sqrt(corner.x * corner.x + corner.y * corner.y);
+              return distFromCenter <= maxRadius;
+            });
+
+            if (!withinBounds) continue;
+
+            const rect = { x: labelX, y: labelY, w: boxW, h: boxH };
+            
+            // Quick conflict resolution
+            const hasConflict = aircraftAreas.some(area => 
+              overlap(rect, area) || rectIntersectsLine(rect, area.leaderLine)
+            ) || placed.some(r => overlap(r, rect));
+
+            if (!hasConflict) {
+              let score = 40 - Math.abs(distance - 75) * 0.2; // Prefer moderate distance
+              
+              // History dot avoidance bonus
+              const historyFree = !historyDotAreas.some(dotArea => overlap(rect, dotArea));
+              if (historyFree) score += 30;
+
+              candidates.push({
+                x: labelX, y: labelY, w: boxW, h: boxH,
+                score, anchor: 'start', distance
+              });
             }
           }
         }
       }
+
+      // Select optimal position
+      let chosen: any = null;
       
-      if (!chosen) {
-        // Advanced fallback: try multiple angles around the aircraft
-        const fallbackAttempts = 16; // Try 16 different angles (22.5 degree increments)
-        for (let attempt = 0; attempt < fallbackAttempts && !chosen; attempt++) {
-          const fallbackAngle = (ac.heading + 90 + (attempt * 22.5)) % 360; // Start perpendicular to leader
-          
-          for (let dist = 40; dist <= 100; dist += 20) {
-            const fallbackX = x + Math.sin(fallbackAngle * Math.PI / 180) * dist;
-            const fallbackY = y - Math.cos(fallbackAngle * Math.PI / 180) * dist;
-            
-            // Check if fallback position fits within circular boundary
-            const fallbackRect = {
-              x: fallbackX,
-              y: fallbackY,
-              w: boxW,
-              h: boxH
-            };
-            
-            const fallbackCorners = [
-              { x: fallbackX, y: fallbackY },
-              { x: fallbackX + boxW, y: fallbackY },
-              { x: fallbackX, y: fallbackY + boxH },
-              { x: fallbackX + boxW, y: fallbackY + boxH }
-            ];
-            
-            const maxFallbackRadius = maxRadius - 10;
-            const withinBounds = fallbackCorners.every(corner => {
-              const distFromCenter = Math.sqrt(corner.x * corner.x + corner.y * corner.y);
-              return distFromCenter <= maxFallbackRadius;
-            });
-            
-            // Check if clear of aircraft areas and other labels
-            const clearOfAircraft = aircraftAreas.every(area => {
-              if (overlap(fallbackRect, area)) return false;
-              if (rectIntersectsLine(fallbackRect, area.leaderLine)) return false;
-              return true;
-            });
-            
-            const clearOfLabels = !placed.some(r => overlap(r, fallbackRect));
-            
-            if (withinBounds && clearOfAircraft && clearOfLabels) {
-              chosen = { x: fallbackX, y: fallbackY, w: boxW, h: boxH, anchor: 'start' };
-              break;
-            }
-          }
-        }
-        
-        // Ultimate fallback: place very close to aircraft if nothing else works
-        if (!chosen) {
-          const ultimateAngle = (ac.heading + 180) % 360; // Opposite to heading
-          const ultimateDist = 25;
-          const ultimateX = x + Math.sin(ultimateAngle * Math.PI / 180) * ultimateDist;
-          const ultimateY = y - Math.cos(ultimateAngle * Math.PI / 180) * ultimateDist;
-          chosen = { x: ultimateX, y: ultimateY, w: boxW, h: boxH, anchor: 'start' };
-        }
+      if (candidates.length > 0) {
+        // Sort by score and pick the best
+        candidates.sort((a, b) => b.score - a.score);
+        const best = candidates[0];
+        chosen = { 
+          x: best.x, y: best.y, w: best.w, h: best.h, 
+          anchor: best.anchor 
+        };
+      } else {
+        // Emergency fallback with minimal requirements
+        const emergencyAngle = (leaderAngle + 180) % 360;
+        const rad = emergencyAngle * Math.PI / 180;
+        const emergencyX = x + Math.cos(rad) * 35 - boxW/2;
+        const emergencyY = y + Math.sin(rad) * 35 - boxH/2;
+        chosen = { 
+          x: emergencyX, y: emergencyY, w: boxW, h: boxH, 
+          anchor: 'start' 
+        };
       }
       placed.push(chosen);
 

@@ -7,10 +7,20 @@ import TrafficInfo from "../components/TrafficInfo";
 export default function HomePage() {
   const [ex, setEx] = useState<Exercise>(() => generateExercise());
   const [show, setShow] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   function next() {
     setEx(generateExercise());
     setShow(false);
+    setShowDetails(false);
+  }
+
+  function toggleAnswer() {
+    if (!show) {
+      setShow(true);
+    } else {
+      setShowDetails(!showDetails);
+    }
   }
 
   return (
@@ -30,11 +40,37 @@ export default function HomePage() {
       </div>
 
       {show && (
-        <div style={{ fontWeight: 600, margin: "1rem 0" }}>{ex.solution}</div>
+        <div style={{ fontWeight: 600, margin: "1rem 0" }}>
+          <div style={{ marginBottom: "0.5rem" }}>{ex.solution}</div>
+          
+          {showDetails && (
+            <div style={{ 
+              fontSize: "0.9rem", 
+              fontWeight: 400, 
+              color: "#666", 
+              textAlign: "left",
+              maxWidth: 420,
+              margin: "0 auto",
+              padding: "1rem",
+              background: "#f5f5f5",
+              borderRadius: 8
+            }}>
+              <div><strong>Scenario Details:</strong></div>
+              <div>• Target: {ex.target.callsign} ({ex.target.flightRule}) - {ex.target.type.name}</div>
+              <div>• Level: {ex.target.level}ft, Speed: {ex.target.speed}kts, Heading: {ex.target.heading}°</div>
+              <div>• Intruder: {ex.intruder.callsign} ({ex.intruder.flightRule}) - {ex.intruder.type.name}</div>
+              <div>• Level: {ex.intruder.level}ft{ex.intruder.levelChange ? ` → ${ex.intruder.levelChange.dir}${ex.intruder.levelChange.to}ft` : ''}</div>
+              <div>• Speed: {ex.intruder.speed}kts, Heading: {ex.intruder.heading}°</div>
+              <div>• Direction: {ex.situation.direction}</div>
+              <div>• Clock/Distance: {ex.situation.clock} o'clock, {ex.situation.distance} miles</div>
+              {ex.intruder.isMil && <div>• Military aircraft (10% chance when target VFR)</div>}
+            </div>
+          )}
+        </div>
       )}
 
-      <button onClick={() => setShow(true)} style={btn.primary}>
-        Show Answer
+      <button onClick={toggleAnswer} style={btn.primary}>
+        {!show ? "Show Answer" : showDetails ? "Hide Details" : "Show Details"}
       </button>
       <button onClick={next} style={btn.outline}>
         Next Scenario

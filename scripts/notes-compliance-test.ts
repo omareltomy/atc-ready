@@ -202,34 +202,144 @@ function validateIntersectionRequirements(scenario: any): { valid: boolean; erro
   return { valid: errors.length === 0, errors };
 }
 
-function validateAircraftData(scenario: any): { valid: boolean; errors: string[] } {
+function validateCallsignRequirements(scenario: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
-  // Check callsign format (more lenient)
   const targetCallsign = scenario.target.callsign;
   const intruderCallsign = scenario.intruder.callsign;
+  const targetFlightRule = scenario.target.flightRule;
+  const intruderFlightRule = scenario.intruder.flightRule;
+  const intruderIsMil = scenario.intruder.isMil;
   
-  // Validate target callsign
-  const isValidCallsign = (callsign: string): boolean => {
-    // Airlines: 3 letters + numbers (e.g., KLM1234)
-    if (/^[A-Z]{3}\d{3,4}$/.test(callsign)) return true;
-    // Military: Word + numbers (e.g., FALCON12)
-    if (/^[A-Z]{4,8}\d{1,2}$/.test(callsign)) return true;
-    // GA: Various patterns (N123AB, G-123, D-E123, etc.)
-    if (/^N\d{3}[A-Z]{2}$/.test(callsign)) return true; // N123AB
-    if (/^[A-Z]-\d{3}$/.test(callsign)) return true; // G-123, F-123, etc.
-    if (/^[A-Z]{2}\d{3}$/.test(callsign)) return true; // PH123, OO123
-    if (/^[A-Z]-[A-Z]\d{3}$/.test(callsign)) return true; // D-E123
-    if (/^[A-Z]\d{3}$/.test(callsign)) return true; // C123
-    return false;
+  // VFR callsigns should be 5 letters with valid prefix (no dash)
+  const isValidVFRCallsign = (callsign: string): boolean => {
+    return /^[A-Z0-9]{1,5}$/.test(callsign) && callsign.length >= 1;
   };
   
-  if (!isValidCallsign(targetCallsign)) {
-    errors.push(`Invalid target callsign format: ${targetCallsign}`);
+  // Commercial callsigns: 3 letters + variable length suffix (1-4 chars, letters/numbers)
+  const isValidCommercialCallsign = (callsign: string): boolean => {
+    return /^[A-Z]{3}[A-Z0-9]{1,4}$/.test(callsign);
+  };
+  
+  // Military callsigns: word + single digit
+  const isValidMilitaryCallsign = (callsign: string): boolean => {
+    return /^[A-Z]{4,8}\d{1}$/.test(callsign);
+  };
+  
+  // Check military callsign assignment rule
+  if (intruderIsMil && intruderFlightRule === 'VFR') {
+    if (!isValidMilitaryCallsign(intruderCallsign)) {
+      errors.push(`Intruder has military flag but invalid military callsign: ${intruderCallsign}`);
+    }
   }
-  if (!isValidCallsign(intruderCallsign)) {
-    errors.push(`Invalid intruder callsign format: ${intruderCallsign}`);
+  
+  // Military callsigns should only be for intruders when target is VFR
+  if (isValidMilitaryCallsign(targetCallsign)) {
+    errors.push(`Target cannot have military callsign: ${targetCallsign}`);
   }
+  
+  if (isValidMilitaryCallsign(intruderCallsign) && targetFlightRule !== 'VFR') {
+    errors.push(`Intruder can only have military callsign when target is VFR`);
+  }
+  
+  // Validate other callsign formats
+  if (targetFlightRule === 'VFR' && !isValidMilitaryCallsign(targetCallsign)) {
+    if (!isValidVFRCallsign(targetCallsign)) {
+      errors.push(`Target VFR callsign format invalid: ${targetCallsign}`);
+    }
+  } else if (targetFlightRule === 'IFR' && !isValidMilitaryCallsign(targetCallsign)) {
+    if (!isValidCommercialCallsign(targetCallsign)) {
+      errors.push(`Target IFR callsign format invalid: ${targetCallsign}`);
+    }
+  }
+  
+  if (intruderFlightRule === 'VFR' && !isValidMilitaryCallsign(intruderCallsign)) {
+    if (!isValidVFRCallsign(intruderCallsign)) {
+      errors.push(`Intruder VFR callsign format invalid: ${intruderCallsign}`);
+    }
+  } else if (intruderFlightRule === 'IFR' && !isValidMilitaryCallsign(intruderCallsign)) {
+    if (!isValidCommercialCallsign(intruderCallsign)) {
+      errors.push(`Intruder IFR callsign format invalid: ${intruderCallsign}`);
+    }
+  }
+  
+  return { valid: errors.length === 0, errors };
+}
+
+function validateLevelRequirements(scenario: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  const targetLevel = scenario.target.level;
+  const intruderLevel = scenario.intruder.level;
+  const intruderLevelChange = scenario.intruder.levelChange;
+  
+  // Initial level difference should never be greater than 1000 feet
+  const levelDifference = Math.abs(targetLevel - intruderLevel);
+  if (levelDifference > 1000) {
+    errors.push(`Initial level difference too large: ${levelDifference}ft (max 1000ft)`);
+  }
+  
+  // Level change should only be applied when aircraft are at different levels
+  if (intruderLevelChange && targetLevel === intruderLevel) {
+    errors.push(`Level change applied when aircraft at same level: ${targetLevel}ft`);
+  }
+  
+  // Target level should be static (no level change for target)
+  if (scenario.target.levelChange) {
+    errors.push(`Target should not have level change`);
+  }
+  
+  // If intruder has level change, it should be crossing target's level
+  if (intruderLevelChange) {
+    const newLevel = intruderLevelChange.to;
+    const direction = intruderLevelChange.dir;
+    
+    // Check if the direction makes sense (moving toward or through target level)
+    if (direction === '↑' && intruderLevel >= targetLevel && newLevel <= targetLevel) {
+      errors.push(`Intruder climbing but new level ${newLevel}ft is not above target ${targetLevel}ft`);
+    }
+    if (direction === '↓' && intruderLevel <= targetLevel && newLevel >= targetLevel) {
+      errors.push(`Intruder descending but new level ${newLevel}ft is not below target ${targetLevel}ft`);
+    }
+  }
+  
+  return { valid: errors.length === 0, errors };
+}
+
+function validateHistoryDotsRequirements(scenario: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  // Check that both aircraft have exactly 3 history dots
+  if (scenario.target.history && scenario.target.history.length !== 3) {
+    errors.push(`Target should have exactly 3 history dots, got ${scenario.target.history.length}`);
+  }
+  if (scenario.intruder.history && scenario.intruder.history.length !== 3) {
+    errors.push(`Intruder should have exactly 3 history dots, got ${scenario.intruder.history.length}`);
+  }
+  
+  // Check history dot spacing (should be around 0.4NM)
+  const checkHistorySpacing = (aircraft: any, name: string) => {
+    if (aircraft.history && aircraft.history.length >= 2) {
+      for (let i = 1; i < aircraft.history.length; i++) {
+        const prev = aircraft.history[i - 1];
+        const curr = aircraft.history[i];
+        const distance = Math.sqrt(Math.pow(curr.x - prev.x, 2) + Math.pow(curr.y - prev.y, 2));
+        // Allow some tolerance (0.35-0.45NM)
+        if (distance < 0.35 || distance > 0.45) {
+          errors.push(`${name} history dot spacing should be ~0.4NM, got ${distance.toFixed(2)}NM`);
+        }
+      }
+    }
+  };
+  
+  checkHistorySpacing(scenario.target, 'Target');
+  checkHistorySpacing(scenario.intruder, 'Intruder');
+  
+  return { valid: errors.length === 0, errors };
+}
+
+function validateAircraftData(scenario: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
   
   // Check aircraft type is abbreviated (should be 4 characters or less)
   if (scenario.target.type.type && scenario.target.type.type.length > 4) {
@@ -317,6 +427,24 @@ function runNotesComplianceTest(numScenarios: number = 1000): TestStats {
       const aircraftCheck = validateAircraftData(scenario);
       if (!aircraftCheck.valid) {
         errors.push(...aircraftCheck.errors);
+      }
+      
+      // Validate callsign requirements (new)
+      const callsignCheck = validateCallsignRequirements(scenario);
+      if (!callsignCheck.valid) {
+        errors.push(...callsignCheck.errors);
+      }
+      
+      // Validate level requirements (new)
+      const levelCheck = validateLevelRequirements(scenario);
+      if (!levelCheck.valid) {
+        errors.push(...levelCheck.errors);
+      }
+      
+      // Validate history dots requirements (new)
+      const historyCheck = validateHistoryDotsRequirements(scenario);
+      if (!historyCheck.valid) {
+        errors.push(...historyCheck.errors);
       }
       
       // Collect statistics

@@ -1,0 +1,26 @@
+This has improved
+Left alignment of the label
+Line breaks in the label
+Addition of “V” BUT should only be added if the aircraft is VFR (see below)
+Aircraft type is now the way it should be
+The history dots now scale with speed, but I’m not sure about the styling (see below)
+Labels don’t overlap anymore with the aircraft or each other but could be slightly improved still (see below)
+The level change improved having them rounded like that
+Directions seem to all be working perfectly now!!
+This should be improved
+Callsigns are not yet what they’re supposed to be. In my code it’s set up exactly how it is in real life, you can have a look there.
+Military callsigns should only be assigned to the intruder based on a percentage only if the target is a VFR. So if the chance is hit, the target will have a regular VFR callsign and the intruder will then have a military callsign.
+Commercial callsigns now ALWAYS have 4 digits added in the end, which in reality is more random (could be 1, 2, 3 or 4 characters and not only numbers but also letters – according to set rules)
+VFR callsigsn are not correct anymore. They will always consist of 5 letters with a specified prefix (as mentioned in data.js) with the addition following certain character rules (also in data.js). Also, the prefix on the radar screen will never have the dash (-) added between the prefix and the suffix.
+Labels have been much improved! There are only a few things that could still be better:
+Labels sometimes cross each other (see example). This is a detail but is more of a quality-of-life improvement.
+Similar to the previous one, this is a minor thing but sometimes the label lines overlap the history dots, taking away information.
+Labels could be placed more aesthetically. Think of where you would put them if you hand selected their location so it’s clear and out of the way of other information. I realise this is hard to do because it’s generated – sorry :-)
+History dots shouldn’t fade away, it’s a fancy touch but not one that is actually shown in real life. There should always only be 3 dots and they also should be a bit closer now. You can tighten the range a little bit on that. (Don’t take on the following rule in the code but just for extra information: one history dot represents one radar update, which is about 6 seconds if I’m not mistaken. The leader line shows the future position of the aircraft in 1 minute. So, 10 history dots should equal the size of the leader line. Again, don’t actually code it like this, but it’s just to give you an idea.)
+Level change: make sure the level change can only be applied when the two aircraft are actually different levels (so that the intruder is crossing the level of the target).
+I wouldn’t add a level change to the target, you can set their level to be static.
+The “show answer” and “next scenario” buttons don’t update yet to show different elements, see previous notes on this one. 
+I would make it so that the initial level difference of the two aircraft is never greater than 1000 feet, so exactly 1000 feet for IFR flights (could be less for VFR)
+
+Labels crossing over each other
+
