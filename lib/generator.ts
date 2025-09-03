@@ -647,8 +647,8 @@ export class AviationTrafficGenerator {
     const intruderX = Math.sin(relativeAngle) * distance;
     const intruderY = Math.cos(relativeAngle) * distance;
     
-    // Same direction with small variation for overtaking
-    let intruderHeading = targetHeading + this.rndFloat(-15, 15); // Allow more variation for intersection
+    // Same direction with increased variation for better intersection chances
+    let intruderHeading = targetHeading + this.rndFloat(-25, 25); // Increased variation
     if (intruderHeading < 0) intruderHeading += 360;
     if (intruderHeading >= 360) intruderHeading -= 360;
     
@@ -656,11 +656,11 @@ export class AviationTrafficGenerator {
     const { targetType, intruderType, targetIsVFR, intruderIsVFR } = this.selectCompatibleAircraft();
     const { targetAltitude, intruderAltitude } = this.generateRealisticAltitudes(targetType, intruderType, targetIsVFR, intruderIsVFR);
     
-    // Use more flexible speed selection for overtaking
-    const targetSpeed = this.rnd(Math.max(60, targetType.speed.min), Math.min(targetType.speed.max, 280)); // Cap target speed lower
-    // Ensure intruder is faster for overtaking with reasonable minimum difference
-    const minIntruderSpeed = targetSpeed + 15; // Reasonable speed difference
-    const maxIntruderSpeed = Math.min(intruderType.speed.max, 400); // Allow higher speeds
+    // More flexible speed selection for overtaking
+    const targetSpeed = this.rnd(Math.max(60, targetType.speed.min), Math.min(targetType.speed.max, 250)); // Lower cap for target
+    // Ensure intruder is faster for overtaking with smaller minimum difference
+    const minIntruderSpeed = targetSpeed + 10; // Reduced minimum speed difference
+    const maxIntruderSpeed = Math.min(intruderType.speed.max, 450); // Higher cap for intruder
     
     if (minIntruderSpeed > maxIntruderSpeed) {
       return null; // Can't make intruder faster, try again
@@ -675,11 +675,11 @@ export class AviationTrafficGenerator {
     if (!intersection) return null;
     
     const intersectionDistance = Math.sqrt(intersection.x * intersection.x + intersection.y * intersection.y);
-    if (intersectionDistance < 2 || intersectionDistance > 6) return null;
+    if (intersectionDistance < 1.5 || intersectionDistance > 6.5) return null; // More lenient range
     
     // More lenient asymmetry check for overtaking
     const asymmetry = Math.abs(intersection.targetDist - intersection.intruderDist);
-    if (asymmetry > 2) return null; // As per notes: ±2 miles margin for realism
+    if (asymmetry > 3) return null; // Increased tolerance for overtaking scenarios
     
     return this.buildExercise(target, intruder, 'overtaking', clock, Math.round(distance));
   }
