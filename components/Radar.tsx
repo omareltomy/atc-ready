@@ -191,7 +191,7 @@ export default function Radar({ exercise }: Props) {
         const d = document.createElementNS(svgNS, 'circle');
         d.setAttribute('cx', String(toPx(p.x)));
         d.setAttribute('cy', String(-toPx(p.y)));
-        d.setAttribute('r', '2');
+        d.setAttribute('r', '1.5'); // Smaller dots as requested
         d.setAttribute('fill', color);
         d.setAttribute('opacity', '0.8'); // Fixed opacity, no fading
         g.appendChild(d);
