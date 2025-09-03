@@ -1,11 +1,22 @@
-import { useReducer, useCallback } from 'react';
+import { useReducer, useCallback, useEffect } from 'react';
 import { 
   AppState, 
   GamePhase, 
   AssessmentOption, 
   ASSESSMENT_POINTS,
-  ExerciseSession 
+  ExerciseSession,
+  Settings 
 } from './types';
+import { 
+  loadSettings, 
+  saveSettings, 
+  loadProgress, 
+  saveProgress, 
+  clearProgress,
+  saveCompletedSession,
+  hasMeaningfulProgress,
+  DEFAULT_SETTINGS 
+} from './storage';
 
 // Action types for the state reducer
 type AppAction =
@@ -17,7 +28,10 @@ type AppAction =
   | { type: 'NEXT_EXERCISE' }
   | { type: 'RETRY_EXERCISE' }
   | { type: 'END_SESSION' }
-  | { type: 'RESET_SESSION' };
+  | { type: 'RESET_SESSION' }
+  | { type: 'UPDATE_SETTINGS'; payload: Partial<Settings> }
+  | { type: 'RESTORE_PROGRESS'; payload: { session: ExerciseSession; gamePhase: GamePhase; showAnswer: boolean; showDetails: boolean } }
+  | { type: 'LOAD_SETTINGS'; payload: Settings };
 
 // Initial state factory
 const createInitialSession = (): ExerciseSession => ({
@@ -28,21 +42,24 @@ const createInitialSession = (): ExerciseSession => ({
   startTime: new Date(),
 });
 
-const initialState: AppState = {
+const createInitialState = (): AppState => ({
   gamePhase: 'start',
   session: createInitialSession(),
   showAnswer: false,
   showDetails: false,
-};
+  settings: DEFAULT_SETTINGS,
+});
 
 // State reducer with comprehensive action handling
 function appStateReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'START_SESSION':
+      const newSession = createInitialSession();
+      newSession.totalExercises = state.settings.totalExercises;
       return {
         ...state,
         gamePhase: 'exercise',
-        session: createInitialSession(),
+        session: newSession,
         showAnswer: false,
         showDetails: false,
       };
@@ -162,6 +179,34 @@ function appStateReducer(state: AppState, action: AppAction): AppState {
         showDetails: false,
       };
 
+    case 'UPDATE_SETTINGS':
+      const updatedSettings = { ...state.settings, ...action.payload };
+      // Auto-save settings when they change
+      saveSettings(updatedSettings);
+      return {
+        ...state,
+        settings: updatedSettings,
+      };
+
+    case 'LOAD_SETTINGS':
+      return {
+        ...state,
+        settings: action.payload,
+      };
+
+    case 'RESTORE_PROGRESS':
+      const { session, gamePhase, showAnswer, showDetails } = action.payload;
+      return {
+        ...state,
+        session: {
+          ...session,
+          startTime: new Date(session.startTime), // Ensure Date object
+        },
+        gamePhase,
+        showAnswer,
+        showDetails,
+      };
+
     default:
       return state;
   }
@@ -169,11 +214,65 @@ function appStateReducer(state: AppState, action: AppAction): AppState {
 
 // Custom hook for application state management
 export function useAppState() {
-  const [state, dispatch] = useReducer(appStateReducer, initialState);
+  const [state, dispatch] = useReducer(appStateReducer, createInitialState());
+
+  // Load settings and progress on mount
+  useEffect(() => {
+    // Load settings
+    const savedSettings = loadSettings();
+    dispatch({ type: 'LOAD_SETTINGS', payload: savedSettings });
+
+    // Load progress if available and user has enabled progress saving
+    if (savedSettings.saveProgress) {
+      const savedProgress = loadProgress();
+      if (hasMeaningfulProgress(savedProgress)) {
+        dispatch({
+          type: 'RESTORE_PROGRESS',
+          payload: {
+            session: savedProgress!.session,
+            gamePhase: savedProgress!.gamePhase,
+            showAnswer: savedProgress!.showAnswer,
+            showDetails: savedProgress!.showDetails,
+          },
+        });
+      }
+    }
+  }, []);
+
+  // Auto-save progress when state changes (if enabled and user has made progress)
+  useEffect(() => {
+    if (state.settings.saveProgress && 
+        state.gamePhase !== 'start' && 
+        state.gamePhase !== 'end' &&
+        state.session.scores.length > 0) { // Only save if user has attempted at least one exercise
+      saveProgress(state.session, state.gamePhase, state.showAnswer, state.showDetails);
+    }
+  }, [state.session, state.gamePhase, state.showAnswer, state.showDetails, state.settings.saveProgress]);
+
+  // Save completed session and clear progress when session ends
+  useEffect(() => {
+    if (state.gamePhase === 'end') {
+      saveCompletedSession(state.session);
+      clearProgress();
+    }
+  }, [state.gamePhase, state.session]);
 
   // Action creators with proper typing
   const actions = {
-    startSession: useCallback(() => dispatch({ type: 'START_SESSION' }), []),
+    startSession: useCallback(() => {
+      // Clear any existing progress that doesn't have actual scores
+      const existingProgress = loadProgress();
+      if (existingProgress && existingProgress.session.scores.length === 0) {
+        clearProgress();
+      }
+      
+      // Create session with user's preferred total exercises
+      const newSession = {
+        ...createInitialSession(),
+        totalExercises: state.settings.totalExercises,
+      };
+      dispatch({ type: 'START_SESSION' });
+    }, [state.settings.totalExercises]),
     showAnswer: useCallback(() => dispatch({ type: 'SHOW_ANSWER' }), []),
     hideAnswer: useCallback(() => dispatch({ type: 'HIDE_ANSWER' }), []),
     toggleDetails: useCallback(() => dispatch({ type: 'TOGGLE_DETAILS' }), []),
@@ -182,7 +281,12 @@ export function useAppState() {
     nextExercise: useCallback(() => dispatch({ type: 'NEXT_EXERCISE' }), []),
     retryExercise: useCallback(() => dispatch({ type: 'RETRY_EXERCISE' }), []),
     endSession: useCallback(() => dispatch({ type: 'END_SESSION' }), []),
-    resetSession: useCallback(() => dispatch({ type: 'RESET_SESSION' }), []),
+    resetSession: useCallback(() => {
+      clearProgress();
+      dispatch({ type: 'RESET_SESSION' });
+    }, []),
+    updateSettings: useCallback((settings: Partial<Settings>) => 
+      dispatch({ type: 'UPDATE_SETTINGS', payload: settings }), []),
   };
 
   // Computed values for easier component consumption

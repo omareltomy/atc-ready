@@ -18,11 +18,25 @@ export interface ExerciseSession {
   startTime: Date;
 }
 
+export interface Settings {
+  totalExercises: number;
+  saveProgress: boolean;
+}
+
+export interface SavedProgress {
+  session: ExerciseSession;
+  gamePhase: GamePhase;
+  showAnswer: boolean;
+  showDetails: boolean;
+  savedAt: string;
+}
+
 export interface AppState {
   gamePhase: GamePhase;
   session: ExerciseSession;
   showAnswer: boolean;
   showDetails: boolean;
+  settings: Settings;
 }
 
 // Assessment scoring system

@@ -3,12 +3,30 @@
 import { useState, useEffect } from "react";
 import { generateExercise, Exercise } from "../lib/generator";
 import { useAppState } from "../lib/useAppState";
-import { ASSESSMENT_BUTTONS } from "../lib/types";
+import { ASSESSMENT_BUTTONS, Settings as SettingsType } from "../lib/types";
+import { loadProgress, clearProgress, hasMeaningfulProgress } from "../lib/storage";
 import TrafficInfo from "../components/TrafficInfo";
+import SettingsButton from "../components/SettingsButton";
+import ProgressPrompt from "../components/ProgressPrompt";
 
 export default function HomePage() {
   const { state, actions, computed } = useAppState();
   const [currentExercise, setCurrentExercise] = useState<Exercise>(() => generateExercise());
+  const [hasProgress, setHasProgress] = useState(false);
+  const [showProgressPrompt, setShowProgressPrompt] = useState(false);
+  const [savedProgressData, setSavedProgressData] = useState<any>(null);
+
+  // Check for saved progress on mount
+  useEffect(() => {
+    const savedProgress = loadProgress();
+    if (hasMeaningfulProgress(savedProgress) &&
+        state.settings.saveProgress &&
+        state.gamePhase === 'start') {
+      setSavedProgressData(savedProgress);
+      setShowProgressPrompt(true);
+    }
+    setHasProgress(hasMeaningfulProgress(savedProgress));
+  }, [state.settings.saveProgress, state.gamePhase]);
 
   // Generate new exercise when moving to next exercise or retrying
   useEffect(() => {
@@ -17,47 +35,102 @@ export default function HomePage() {
     }
   }, [state.session.currentExercise, state.gamePhase]);
 
+  // Update progress indicator
+  useEffect(() => {
+    setHasProgress(state.gamePhase !== 'start' && state.gamePhase !== 'end' && state.session.scores.length > 0);
+  }, [state.gamePhase, state.session.scores]);
+
+  const handleRestoreProgress = () => {
+    if (savedProgressData) {
+      // The restoration will happen automatically through useAppState
+      setShowProgressPrompt(false);
+      setSavedProgressData(null);
+    }
+  };
+
+  const handleDiscardProgress = () => {
+    clearProgress();
+    actions.resetSession(); // Reset the session state to start
+    setShowProgressPrompt(false);
+    setSavedProgressData(null);
+    setHasProgress(false);
+  };
+
   // Render different phases of the application
-  switch (state.gamePhase) {
-    case 'start':
-      return <StartScreen onStart={actions.startSession} />;
-    
-    case 'exercise':
-    case 'assessment':
-      return (
-        <ExerciseScreen
-          exercise={currentExercise}
-          state={state}
-          actions={actions}
-          computed={computed}
+  return (
+    <>
+      {/* Progress Restoration Prompt */}
+      {showProgressPrompt && savedProgressData && (
+        <ProgressPrompt
+          savedProgress={savedProgressData}
+          onRestore={handleRestoreProgress}
+          onDiscard={handleDiscardProgress}
         />
-      );
-    
-    case 'end':
-      return (
-        <EndScreen
-          session={state.session}
-          computed={computed}
-          onRestart={actions.resetSession}
-        />
-      );
-    
-    default:
-      return null;
-  }
+      )}
+
+      {/* Main App Content */}
+      {(() => {
+        switch (state.gamePhase) {
+          case 'start':
+            return <StartScreen onStart={actions.startSession} settings={state.settings} onUpdateSettings={actions.updateSettings} hasProgress={hasProgress} />;
+          
+          case 'exercise':
+          case 'assessment':
+            return (
+              <ExerciseScreen
+                exercise={currentExercise}
+                state={state}
+                actions={actions}
+                computed={computed}
+                settings={state.settings}
+                onUpdateSettings={actions.updateSettings}
+              />
+            );
+          
+          case 'end':
+            return (
+              <EndScreen
+                session={state.session}
+                computed={computed}
+                onRestart={actions.resetSession}
+                settings={state.settings}
+                onUpdateSettings={actions.updateSettings}
+              />
+            );
+          
+          default:
+            return null;
+        }
+      })()}
+    </>
+  );
 }
 
 // Start Screen Component
-function StartScreen({ onStart }: { onStart: () => void }) {
+function StartScreen({ onStart, settings, onUpdateSettings, hasProgress }: { 
+  onStart: () => void;
+  settings: SettingsType;
+  onUpdateSettings: (settings: Partial<SettingsType>) => void;
+  hasProgress: boolean;
+}) {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-custom-bg">
+      {/* Settings Button */}
+      <div className="absolute top-4 right-4">
+        <SettingsButton 
+          settings={settings} 
+          onUpdateSettings={onUpdateSettings}
+          hasProgress={hasProgress}
+        />
+      </div>
+
       <div className="text-center max-w-md">
         <h1 className="text-3xl font-bold mb-4 text-custom-fg">
           ATC Ready
         </h1>
         <p className="text-lg mb-8 text-gray-700">
           Practice giving traffic information with realistic radar scenarios. 
-          Complete 10 exercises and track your progress.
+          Complete {settings.totalExercises} exercises and track your progress.
         </p>
         <button
           onClick={onStart}
@@ -65,6 +138,12 @@ function StartScreen({ onStart }: { onStart: () => void }) {
         >
           Start First Exercise
         </button>
+        
+        {hasProgress && settings.saveProgress && (
+          <p className="text-sm text-blue-600 mt-3">
+            You have saved progress that will be restored
+          </p>
+        )}
       </div>
     </main>
   );
@@ -75,26 +154,43 @@ function ExerciseScreen({
   exercise, 
   state, 
   actions, 
-  computed 
+  computed,
+  settings,
+  onUpdateSettings
 }: {
   exercise: Exercise;
   state: any;
   actions: any;
   computed: any;
+  settings: SettingsType;
+  onUpdateSettings: (settings: Partial<SettingsType>) => void;
 }) {
   return (
     <main className="min-h-screen flex flex-col p-4 max-w-md mx-auto">
-      {/* Progress Header - Compact */}
-      <div className="mb-3 text-center">
-        <div className="text-sm text-gray-600 mb-1">
-          Exercise {state.session.currentExercise} of {state.session.totalExercises}
+      {/* Header with Settings */}
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex-1">
+          <div className="text-sm text-gray-600 mb-1">
+            Exercise {state.session.currentExercise} of {state.session.totalExercises}
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-1.5">
+            <div 
+              className="bg-black h-1.5 rounded-full transition-all duration-300"
+              style={{ width: `${computed.progressPercentage}%` }}
+            />
+          </div>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-1.5 mb-3">
-          <div 
-            className="bg-black h-1.5 rounded-full transition-all duration-300"
-            style={{ width: `${computed.progressPercentage}%` }}
+        <div className="ml-4">
+          <SettingsButton 
+            settings={settings} 
+            onUpdateSettings={onUpdateSettings}
+            hasProgress={true}
           />
         </div>
+      </div>
+
+      {/* Exercise Title */}
+      <div className="text-center mb-3">
         <h3 className="text-lg font-medium">
           Give traffic information to {exercise.target.callsign}
         </h3>
@@ -155,15 +251,15 @@ function ExerciseScreen({
                 <button
                   key={button.option}
                   onClick={() => actions.submitAssessment(button.option)}
-                  className={`px-3 py-2.5 rounded-[10px] font-semibold text-white transition-colors ${
-                    button.color === 'green' ? 'bg-green-600 hover:bg-green-700' :
-                    button.color === 'yellow' ? 'bg-yellow-500 hover:bg-yellow-600' :
-                    button.color === 'orange' ? 'bg-orange-500 hover:bg-orange-600' :
-                    'bg-red-500 hover:bg-red-600'
+                  className={`px-3 py-2.5 rounded-[10px] font-medium text-white transition-colors ${
+                    button.color === 'green' ? 'bg-green-700 hover:bg-green-800' :
+                    button.color === 'yellow' ? 'bg-yellow-600 hover:bg-yellow-700' :
+                    button.color === 'orange' ? 'bg-orange-600 hover:bg-orange-700' :
+                    'bg-red-600 hover:bg-red-700'
                   }`}
                 >
-                  <div className="text-sm">{button.label}</div>
-                  <div className="text-xs opacity-90">{button.description}</div>
+                  <div className="text-sm font-medium">{button.label}</div>
+                  <div className="text-xs opacity-90 font-light">{button.description}</div>
                 </button>
               ))}
             </div>
@@ -178,17 +274,30 @@ function ExerciseScreen({
 function EndScreen({ 
   session, 
   computed, 
-  onRestart 
+  onRestart,
+  settings,
+  onUpdateSettings
 }: {
   session: any;
   computed: any;
   onRestart: () => void;
+  settings: SettingsType;
+  onUpdateSettings: (settings: Partial<SettingsType>) => void;
 }) {
   const maxPossibleScore = session.totalExercises * 3; // 3 points per exercise
   const scorePercentage = (session.totalScore / maxPossibleScore) * 100;
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4">
+      {/* Settings Button */}
+      <div className="absolute top-4 right-4">
+        <SettingsButton 
+          settings={settings} 
+          onUpdateSettings={onUpdateSettings}
+          hasProgress={false}
+        />
+      </div>
+
       <div className="text-center max-w-md">
         <h1 className="text-3xl font-bold mb-6">Session Complete!</h1>
         
