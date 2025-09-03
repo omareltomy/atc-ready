@@ -166,7 +166,7 @@ function ExerciseScreen({
   onUpdateSettings: (settings: Partial<SettingsType>) => void;
 }) {
   return (
-    <main className="min-h-screen flex flex-col p-4 max-w-md mx-auto">
+    <main className="h-[100dvh] flex flex-col p-4 max-w-md mx-auto">
       {/* Header with Settings */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex-1">
