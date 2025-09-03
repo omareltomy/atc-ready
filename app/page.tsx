@@ -24,37 +24,20 @@ export default function HomePage() {
   }
 
   return (
-    <main style={{ padding: "1rem", textAlign: "center" }}>
-      <h3>Give traffic information to {ex.target.callsign}</h3>
+    <main className="p-4 text-center">
+      <h3 className="mb-4">Give traffic information to {ex.target.callsign}</h3>
 
       {/* 1:1 container for the radar */}
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 420,
-          aspectRatio: "1 / 1",
-          margin: "0 auto",
-        }}
-      >
+      <div className="w-full max-w-[420px] aspect-square mx-auto">
         <TrafficInfo exercise={ex} />
       </div>
 
       {show && (
-        <div style={{ fontWeight: 600, margin: "1rem 0" }}>
-          <div style={{ marginBottom: "0.5rem" }}>{ex.solution}</div>
+        <div className="font-semibold my-4">
+          <div className="mb-2">{ex.solution}</div>
           
           {showDetails && (
-            <div style={{ 
-              fontSize: "0.9rem", 
-              fontWeight: 400, 
-              color: "#666", 
-              textAlign: "left",
-              maxWidth: 420,
-              margin: "0 auto",
-              padding: "1rem",
-              background: "#f5f5f5",
-              borderRadius: 8
-            }}>
+            <div className="text-sm font-normal text-gray-600 text-left max-w-[420px] mx-auto p-4 bg-gray-100 rounded-lg">
               <div><strong>Scenario Details:</strong></div>
               <div>• Target: {ex.target.callsign} ({ex.target.flightRule}) - {ex.target.type.name}</div>
               <div>• Level: {ex.target.level}ft, Speed: {ex.target.speed}kts, Heading: {ex.target.heading}°</div>
@@ -69,39 +52,18 @@ export default function HomePage() {
         </div>
       )}
 
-      <button onClick={toggleAnswer} style={btn.primary}>
+      <button 
+        onClick={toggleAnswer} 
+        className="block w-[90%] max-w-[420px] mx-auto my-2 px-5 py-[0.9rem] bg-black text-white border-0 rounded-[10px] font-semibold cursor-pointer"
+      >
         {!show ? "Show Answer" : showDetails ? "Hide Details" : "Show Details"}
       </button>
-      <button onClick={next} style={btn.outline}>
+      <button 
+        onClick={next} 
+        className="block w-[90%] max-w-[420px] mx-auto my-2 px-5 py-[0.9rem] bg-white text-black border border-black rounded-[10px] font-semibold cursor-pointer"
+      >
         Next Scenario
       </button>
     </main>
   );
 }
-
-const btn = {
-  primary: {
-    display: "block" as const,
-    width: "90%",
-    maxWidth: 420,
-    margin: "0.5rem auto",
-    padding: "0.9rem 1.2rem",
-    background: "#000",
-    color: "#fff",
-    border: "none",
-    borderRadius: 10,
-    fontWeight: 600,
-  },
-  outline: {
-    display: "block" as const,
-    width: "90%",
-    maxWidth: 420,
-    margin: "0.5rem auto",
-    padding: "0.9rem 1.2rem",
-    background: "#fff",
-    color: "#000",
-    border: "1px solid #000",
-    borderRadius: 10,
-    fontWeight: 600,
-  },
-};

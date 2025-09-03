@@ -1,3 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-custom-bg: #f6f7f9;
+  --color-custom-fg: #000;
+  --color-custom-radar: #111;
+  --color-custom-ring: #222;
+  --color-custom-cross: #444;
+  --color-custom-label-bg: rgba(0,0,0,0.6);
+  --color-custom-text: #fff;
+  --color-custom-target: #0f0;
+  --color-custom-intruder: #fff;
+  
+  --font-family-system: system-ui, sans-serif;
+}
+
 :root {
   --bg: #f6f7f9;
   --fg: #000;
@@ -9,13 +25,16 @@
   --target: #0f0;
   --intruder: #fff;
 }
+
 html, body, #__next {
-  margin: 0; padding: 0;
+  margin: 0; 
+  padding: 0;
   height: 100%;
   background: var(--bg);
   color: var(--fg);
   font-family: system-ui, sans-serif;
 }
+
 button {
   cursor: pointer;
 }
