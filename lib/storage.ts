@@ -75,10 +75,6 @@ export function saveSettings(settings: Settings): boolean {
   return setToStorage(STORAGE_KEYS.SETTINGS, settings);
 }
 
-export function resetSettings(): boolean {
-  return setToStorage(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-}
-
 // Progress management
 export function loadProgress(): SavedProgress | null {
   return getFromStorage<SavedProgress | null>(STORAGE_KEYS.PROGRESS, null);
@@ -215,46 +211,4 @@ export function getSessionStatistics(): SessionStats {
     completionRate,
     lastPlayed: history[0]?.completedAt || '',
   };
-}
-
-export function clearAllData(): boolean {
-  const keys = Object.values(STORAGE_KEYS);
-  let success = true;
-  
-  keys.forEach(key => {
-    if (!removeFromStorage(key)) {
-      success = false;
-    }
-  });
-  
-  return success;
-}
-
-// Export for debugging purposes
-export function exportUserData(): string {
-  const data = {
-    settings: loadSettings(),
-    progress: loadProgress(),
-    sessionHistory: loadSessionHistory(),
-    statistics: getSessionStatistics(),
-    exportedAt: new Date().toISOString(),
-  };
-  
-  return JSON.stringify(data, null, 2);
-}
-
-// Import user data (useful for backup/restore)
-export function importUserData(jsonData: string): boolean {
-  try {
-    const data = JSON.parse(jsonData);
-    
-    if (data.settings) saveSettings(data.settings);
-    if (data.progress) setToStorage(STORAGE_KEYS.PROGRESS, data.progress);
-    if (data.sessionHistory) setToStorage(STORAGE_KEYS.SESSION_HISTORY, data.sessionHistory);
-    
-    return true;
-  } catch (error) {
-    console.error('Failed to import user data:', error);
-    return false;
-  }
 }
