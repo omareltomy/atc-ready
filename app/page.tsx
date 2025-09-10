@@ -198,37 +198,39 @@ function ExerciseScreen({
       </div>
 
       {/* Radar Display - More compact */}
-      <div className="flex-1 flex items-center justify-center py-2">
+      <div className="flex items-center justify-center py-2">
         <div className="w-full max-w-[380px] aspect-square">
           <TrafficInfo exercise={exercise} />
         </div>
       </div>
 
-      {/* Answer Section - Compact */}
-      {state.showAnswer && (
-        <div className="mb-3 text-center">
-          <div className="font-semibold mb-2 text-base">
-            {exercise.solution}
-          </div>
-          
-          {state.showDetails && (
-            <div className="text-sm text-gray-600 text-left max-w-[380px] mx-auto p-3 bg-gray-100 rounded-lg">
-              <div><strong>Scenario Details:</strong></div>
-              <div>• Target: {exercise.target.callsign} ({exercise.target.flightRule}) - {exercise.target.type.name}</div>
-              <div>• Level: {exercise.target.level}ft, Speed: {exercise.target.speed}kts, Heading: {exercise.target.heading}°</div>
-              <div>• Intruder: {exercise.intruder.callsign} ({exercise.intruder.flightRule}) - {exercise.intruder.type.name}</div>
-              <div>• Level: {exercise.intruder.level}ft{exercise.intruder.levelChange ? ` → ${exercise.intruder.levelChange.dir}${exercise.intruder.levelChange.to}ft` : ''}</div>
-              <div>• Speed: {exercise.intruder.speed}kts, Heading: {exercise.intruder.heading}°</div>
-              <div>• Direction: {exercise.situation.direction}</div>
-              <div>• Clock/Distance: {exercise.situation.clock} o'clock, {exercise.situation.distance} miles</div>
-              {exercise.intruder.isMil && <div>• Military aircraft (10% chance when target VFR)</div>}
+      {/* Answer Section - Fixed height to prevent layout shifts */}
+      <div className="text-center" style={{ minHeight: state.showAnswer ? 'auto' : '60px' }}>
+        {state.showAnswer && (
+          <>
+            <div className="font-semibold mb-2 text-base">
+              {exercise.solution}
             </div>
-          )}
-        </div>
-      )}
+            
+            {state.showDetails && (
+              <div className="text-sm text-gray-600 text-left max-w-[380px] mx-auto p-3 bg-gray-100 rounded-lg">
+                <div><strong>Scenario Details:</strong></div>
+                <div>• Target: {exercise.target.callsign} ({exercise.target.flightRule}) - {exercise.target.type.name}</div>
+                <div>• Level: {exercise.target.level}ft, Speed: {exercise.target.speed}kts, Heading: {exercise.target.heading}°</div>
+                <div>• Intruder: {exercise.intruder.callsign} ({exercise.intruder.flightRule}) - {exercise.intruder.type.name}</div>
+                <div>• Level: {exercise.intruder.level}ft{exercise.intruder.levelChange ? ` → ${exercise.intruder.levelChange.dir}${exercise.intruder.levelChange.to}ft` : ''}</div>
+                <div>• Speed: {exercise.intruder.speed}kts, Heading: {exercise.intruder.heading}°</div>
+                <div>• Direction: {exercise.situation.direction}</div>
+                <div>• Clock/Distance: {exercise.situation.clock} o'clock, {exercise.situation.distance} miles</div>
+                {exercise.intruder.isMil && <div>• Military aircraft (10% chance when target VFR)</div>}
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Button Section - Fixed height to prevent layout shifts */}
-      <div className="space-y-2 pb-4" style={{ minHeight: '120px' }}>
+      <div className="space-y-2 pb-4 mt-4" style={{ minHeight: '120px' }}>
         {state.gamePhase === 'exercise' ? (
           // Show Answer and Next Exercise Buttons
           <div className="space-y-2">
