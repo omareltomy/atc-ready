@@ -213,9 +213,9 @@ export class AviationTrafficGenerator {
   private generateHistory(position: { x: number; y: number }, heading: number, speed: number): { x: number; y: number }[] {
     const history: { x: number; y: number }[] = [];
     
-    // Always generate exactly 3 history dots with tighter spacing
+    // Always generate exactly 3 history dots with spacing for visual separation
     const numDots = 3;
-    const spacing = 0.4; // Fixed spacing of 0.4 NM between dots
+    const spacing = 0.5; // Increased spacing to 0.5 NM for better visual separation
     
     // Calculate reverse heading (where aircraft came from)
     const reverseHeading = (heading + 180) % 360;
