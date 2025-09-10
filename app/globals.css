@@ -8,7 +8,7 @@
   --color-custom-cross: #444;
   --color-custom-label-bg: rgba(0,0,0,0.6);
   --color-custom-text: #fff;
-  --color-custom-target: #0f0;
+  --color-custom-target: #fff;
   --color-custom-intruder: #fff;
   
   --font-family-system: system-ui, sans-serif;
@@ -22,7 +22,7 @@
   --cross: #444;
   --label-bg: rgba(0,0,0,0.6);
   --text: #fff;
-  --target: #0f0;
+  --target: #fff;
   --intruder: #fff;
 }
 
@@ -33,7 +33,7 @@ html, body, #__next {
   background: var(--bg);
   color: var(--fg);
   font-family: system-ui, sans-serif;
-  overflow-y: scroll;
+  overflow: hidden;
 }
 
 button {

@@ -46,13 +46,13 @@ export default function ProgressPrompt({ savedProgress, onRestore, onDiscard }: 
         <div className="flex space-x-3">
           <button
             onClick={onRestore}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+            className="flex-1 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-medium"
           >
             Restore Progress
           </button>
           <button
             onClick={onDiscard}
-            className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium"
+            className="flex-1 px-4 py-2 bg-white text-black border-2 border-black rounded-lg hover:bg-gray-100 font-medium"
           >
             Start Fresh
           </button>

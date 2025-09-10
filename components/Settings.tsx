@@ -26,9 +26,9 @@ export default function Settings({ settings, onUpdateSettings, onClose }: Settin
       backdropFilter: 'blur(4px)',
       WebkitBackdropFilter: 'blur(4px)'
     }}>
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="bg-white rounded-lg max-w-md w-full shadow-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
           <h2 className="text-xl font-bold">Settings</h2>
           <button
             onClick={onClose}
@@ -39,7 +39,7 @@ export default function Settings({ settings, onUpdateSettings, onClose }: Settin
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b">
+        <div className="flex border-b flex-shrink-0">
           {[
             { id: 'general', label: 'General' },
             { id: 'stats', label: 'Statistics' },
@@ -49,7 +49,7 @@ export default function Settings({ settings, onUpdateSettings, onClose }: Settin
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 py-3 px-4 text-sm font-medium ${
                 activeTab === tab.id
-                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  ? 'text-black border-b-2 border-black'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -59,7 +59,7 @@ export default function Settings({ settings, onUpdateSettings, onClose }: Settin
         </div>
 
         {/* Content */}
-        <div className="p-4 overflow-y-auto max-h-[60vh]">
+        <div className="p-4 flex-1 overflow-y-auto min-h-0">
           {/* General Settings */}
           {activeTab === 'general' && (
             <div className="space-y-6">
@@ -93,7 +93,7 @@ export default function Settings({ settings, onUpdateSettings, onClose }: Settin
                     onChange={(e) => onUpdateSettings({ saveProgress: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                 </label>
               </div>
             </div>
@@ -104,19 +104,19 @@ export default function Settings({ settings, onUpdateSettings, onClose }: Settin
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{stats.totalSessions}</div>
+                  <div className="text-2xl font-bold text-black">{stats.totalSessions}</div>
                   <div className="text-sm text-gray-600">Total Sessions</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{stats.totalExercises}</div>
+                  <div className="text-2xl font-bold text-black">{stats.totalExercises}</div>
                   <div className="text-sm text-gray-600">Exercises Completed</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">{stats.averageScore.toFixed(1)}</div>
+                  <div className="text-2xl font-bold text-black">{stats.averageScore.toFixed(1)}</div>
                   <div className="text-sm text-gray-600">Average Score</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600">{stats.bestScorePercentage.toFixed(1)}%</div>
+                  <div className="text-2xl font-bold text-black">{stats.bestScorePercentage.toFixed(1)}%</div>
                   <div className="text-sm text-gray-600">Best Session</div>
                 </div>
               </div>

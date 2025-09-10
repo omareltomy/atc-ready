@@ -1,0 +1,28 @@
+EXERCISE SCREEN
+⦁	Add a button below ‘Show Answer’ that says ‘Next Exercise’ in order to skip an exercise
+⦁	Change target aircraft colour to white
+CALLSIGNS
+⦁	If intruder is a VFR, then they have a 10% chance of being military. ONLY the intruder can be military (never the target)
+⦁	Please check the callsign generation code in my version as it works exactly as I want it to. It starts from line 65 in generation.js. There are a number of things that aren’t correct in the current version (such as VFR callsigns containing numbers, a lot of aircraft being military, etc.)
+⦁	I’m adding a separate word file trying to explain in words what I mean but the best reference is in my code. If you would like more information, let’s arrange a quick call.
+AIRCRAFT TYPES
+⦁	Add a button below ‘Show Answer’ that says ‘Next Exercise’ in order to skip an exercise
+⦁	Aircraft types are based on the type of flight, similar to the callsigns
+⦁	VFR => Only use vfr aircraft types (there’s a list in data.js)
+⦁	IFR => Only use IFR aircraft types
+⦁	Military => Only use military aircraft types
+FUNCTIONALITY
+⦁	When intruder is climbing or descending through the level of the target, include it in the solution
+⦁	=> “… 1000 feet above, descending through your level, …”
+⦁	=> “… 1000 feet below, climbing through your level, …”
+⦁	Well done on the solutions!! The situations are all working and clear, that’s the most important part done!
+ANSWER BUTTONS
+⦁	Clicking ‘Again’ should literally load the same exercise again (aka, remove the solution text)
+⦁	I like the buttons a lot!
+⦁	When clicking ‘Show Answer’, I don’t want the layout to shift upwards. If possible, foresee a certain amount of space for the buttons before clicking show answer and the buttons after clicking it so that the radar screen is not pushed up.
+⦁	‘Show Details’ button can be removed. I like the idea behind it, but that’s something that can be implemented in the future in a slightly different format.
+⦁	The four colours should be changed to the following (with appropriate hover colours):
+⦁	Green: #4CAF50
+⦁	Yellow: #FFC107
+⦁	Orange: #FF9800
+⦁	Red: #F44336

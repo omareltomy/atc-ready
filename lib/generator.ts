@@ -70,16 +70,123 @@ export class AviationTrafficGenerator {
     { direction: 'overtaking', weight: 5 }
   ];
 
-  private airlines = [
-    'KLM', 'BAW', 'DLH', 'AFR', 'UAL', 'DAL', 'AAL', 'SWR', 'IBE', 'EZY', 'RYR'
-  ];
-
   private militaryCallsigns = [
-    'FALCON', 'EAGLE', 'VIPER', 'TIGER', 'HAWK', 'RAVEN', 'GHOST', 'SHADOW'
+    "REDARROW", "ANGE", "LHOB", "MILAN", "REF", "BENGA", "VOLPE", "FIAMM", 
+    "HKY", "RRR", "HR", "VVAJ", "BAF", "RCH", "CFC", "SPARTA", "BRK", "ROF", 
+    "OR", "COBRA", "SRA", "RNGR", "BOMR", "WOLF", "TRITN", "RESQ"
   ];
 
-  private gaCallsigns = [
-    'N', 'G-', 'D-E', 'PH', 'OO', 'F-', 'C-'
+  private vfrCallsigns = [
+    { country: "Belgium", countryCode: "OO", presentation: "PZZ" },
+    { country: "Austria", countryCode: "OE", presentation: "KZZ" },
+    { country: "Bulgaria", countryCode: "LZ", presentation: "ZZZ" },
+    { country: "Czech Republic", countryCode: "OK", presentation: "ZZZ" },
+    { country: "Slovakia", countryCode: "OM", presentation: "ZZZ" },
+    { country: "Estonia", countryCode: "ES", presentation: "ZZZ" },
+    { country: "Isle of Man", countryCode: "M", presentation: "ZZZZ" },
+    { country: "Finland", countryCode: "OH", presentation: "ZZZ" },
+    { country: "Germany", countryCode: "DE", presentation: "ZZZ" },
+    { country: "France", countryCode: "F", presentation: "ZZZZ" },
+    { country: "Italy", countryCode: "I", presentation: "ZZZZ" },
+    { country: "Hungary", countryCode: "HA", presentation: "ZZZ" },
+    { country: "Ireland", countryCode: "IE", presentation: "ZZZ" },
+    { country: "Latvia", countryCode: "YL", presentation: "ZZZ" },
+    { country: "Lithuania", countryCode: "LY", presentation: "ZZZ" },
+    { country: "Luxembourg", countryCode: "LX", presentation: "ZZZ" },
+    { country: "Netherlands", countryCode: "PH", presentation: "ZZZ" },
+    { country: "Norway", countryCode: "LN", presentation: "ZZZ" },
+    { country: "Poland", countryCode: "SP", presentation: "ZZZ" },
+    { country: "Portugal", countryCode: "CR", presentation: "ZZZ" },
+    { country: "Spain", countryCode: "EC", presentation: "WZZ" },
+    { country: "Sweden", countryCode: "SE", presentation: "ZZZ" },
+    { country: "Switzerland", countryCode: "HB", presentation: "ZZZ" },
+    { country: "Serbia", countryCode: "YU", presentation: "ZZZ" },
+    { country: "United Kingdom", countryCode: "G", presentation: "ZZZZ" },
+    { country: "United States", countryCode: "N", presentation: "1AA-999ZZ" },
+    { country: "Denmark", countryCode: "OY", presentation: "ZZZ" }
+  ];
+
+  private airlines = [
+    { icao: "AAL", callsign: "american" },
+    { icao: "ACA", callsign: "air canada" },
+    { icao: "AFR", callsign: "air france" },
+    { icao: "AUA", callsign: "austrian" },
+    { icao: "BAW", callsign: "speedbird" },
+    { icao: "BTI", callsign: "air baltic" },
+    { icao: "AAB", callsign: "abelag" },
+    { icao: "AIC", callsign: "air inida" },
+    { icao: "ANA", callsign: "all nippon" },
+    { icao: "ASL", callsign: "air serbia" },
+    { icao: "BEL", callsign: "beeline" },
+    { icao: "BLX", callsign: "bluescan" },
+    { icao: "CAI", callsign: "corendon" },
+    { icao: "CAO", callsign: "airchina freight" },
+    { icao: "CES", callsign: "china eastern" },
+    { icao: "CHH", callsign: "hainan" },
+    { icao: "CLG", callsign: "challair" },
+    { icao: "CTN", callsign: "croatia" },
+    { icao: "CYP", callsign: "cyprair" },
+    { icao: "DAL", callsign: "delta" },
+    { icao: "DLA", callsign: "dolomiti" },
+    { icao: "DLH", callsign: "lufthansa" },
+    { icao: "EDW", callsign: "edelweiss" },
+    { icao: "EIN", callsign: "shamrock" },
+    { icao: "EJA", callsign: "execjet" },
+    { icao: "EJU", callsign: "alpine" },
+    { icao: "ETD", callsign: "etihad" },
+    { icao: "ETH", callsign: "ethiopian" },
+    { icao: "EWG", callsign: "eurowings" },
+    { icao: "EXS", callsign: "channex" },
+    { icao: "EZY", callsign: "easy" },
+    { icao: "FDX", callsign: "fedex" },
+    { icao: "FIN", callsign: "finair" },
+    { icao: "IBE", callsign: "iberia" },
+    { icao: "ICE", callsign: "iceair" },
+    { icao: "ITY", callsign: "itarrow" },
+    { icao: "JAF", callsign: "beauty" },
+    { icao: "JBU", callsign: "jetblue" },
+    { icao: "JIA", callsign: "blue streak" },
+    { icao: "KAL", callsign: "korean air" },
+    { icao: "KLM", callsign: "klm" },
+    { icao: "LGL", callsign: "luxair" },
+    { icao: "LOT", callsign: "lot" },
+    { icao: "MAC", callsign: "arabia maroc" },
+    { icao: "MXY", callsign: "moxy" },
+    { icao: "NFA", callsign: "north flying" },
+    { icao: "NJE", callsign: "fraction" },
+    { icao: "NOZ", callsign: "nordic" },
+    { icao: "NSZ", callsign: "rednose" },
+    { icao: "OCN", callsign: "ocean" },
+    { icao: "PGT", callsign: "sunturk" },
+    { icao: "QTR", callsign: "qatari" },
+    { icao: "RJA", callsign: "jordanian" },
+    { icao: "ROT", callsign: "tarom" },
+    { icao: "RPA", callsign: "brickyard" },
+    { icao: "ROU", callsign: "rouge" },
+    { icao: "RYR", callsign: "ryanair" },
+    { icao: "SAS", callsign: "scandinavian" },
+    { icao: "SIA", callsign: "singapore" },
+    { icao: "SVA", callsign: "saudia" },
+    { icao: "SWA", callsign: "southwest" },
+    { icao: "SWR", callsign: "swiss" },
+    { icao: "TAP", callsign: "air portugal" },
+    { icao: "THA", callsign: "thai" },
+    { icao: "THY", callsign: "turkish" },
+    { icao: "TOM", callsign: "tom jet" },
+    { icao: "TRA", callsign: "transavia" },
+    { icao: "TSC", callsign: "air transat" },
+    { icao: "TUI", callsign: "tui jet" },
+    { icao: "TVS", callsign: "skytravel" },
+    { icao: "UAE", callsign: "emirates" },
+    { icao: "UAL", callsign: "united" },
+    { icao: "UPS", callsign: "ups" },
+    { icao: "VIR", callsign: "virgin express" },
+    { icao: "VKG", callsign: "viking" },
+    { icao: "VLG", callsign: "vueling" },
+    { icao: "VOE", callsign: "volotea" },
+    { icao: "WIF", callsign: "wideroe" },
+    { icao: "WJA", callsign: "westjet" },
+    { icao: "WZZ", callsign: "wizzair" }
   ];
 
   public static getInstance(): AviationTrafficGenerator {
@@ -144,53 +251,48 @@ export class AviationTrafficGenerator {
   }
 
   private selectCompatibleAircraft(): { targetType: AcType; intruderType: AcType; targetIsVFR: boolean; intruderIsVFR: boolean } {
-    // Define aircraft categories with realistic pairing
-    const lowAltitude = [...VFR_TYPES]; // VFR aircraft (1,000-5,500 feet)
-    const mediumAltitude = [...IFR_TYPES.filter(ac => ac.altitude.max <= 30000)]; // Regional/smaller commercial (5,000-30,000 feet)
-    const highAltitude = [...IFR_TYPES.filter(ac => ac.altitude.max > 30000)]; // Large commercial (10,000-43,000 feet)
-    const militaryLow = [MIL_TYPES[2]]; // UH-60 helicopter (500-8,000 feet)
-    const militaryMed = [MIL_TYPES[1]]; // C-130 (1,000-30,000 feet)
-    const militaryHigh = [MIL_TYPES[0], MIL_TYPES[3], MIL_TYPES[4]]; // F-16, F/A-18, KC-135 (high altitude capable)
-
-    // Define compatible pairing groups
-    const compatibleGroups = [
-      { name: 'VFR_Traffic', aircraft: lowAltitude, isVFR: true },
-      { name: 'Regional_IFR', aircraft: mediumAltitude, isVFR: false },
-      { name: 'Commercial_IFR', aircraft: highAltitude, isVFR: false },
-      { name: 'Military_Low', aircraft: militaryLow, isVFR: false },
-      { name: 'Military_Med', aircraft: militaryMed, isVFR: false },
-      { name: 'Military_High', aircraft: militaryHigh, isVFR: false }
+    // Flight rule distribution (based on requirements)
+    const flightRuleWeights = [
+      { selection: 'VFR', weight: 30 },
+      { selection: 'IFR', weight: 70 }
     ];
-
-    // Allow some cross-group pairing for realism (but within reasonable altitude ranges)
-    const compatiblePairings = [
-      // Same category pairings (most common)
-      ['VFR_Traffic', 'VFR_Traffic'],
-      ['Regional_IFR', 'Regional_IFR'],
-      ['Commercial_IFR', 'Commercial_IFR'],
-      ['Military_Low', 'Military_Low'],
-      ['Military_Med', 'Military_Med'],
-      ['Military_High', 'Military_High'],
-      
-      // Cross-category pairings (less common but realistic)
-      ['Regional_IFR', 'Commercial_IFR'], // Regional and commercial mix
-      ['Military_Med', 'Regional_IFR'], // Military transport with civilian
-      ['Military_High', 'Commercial_IFR'], // High altitude military with commercial
-    ];
-
-    // Select a random compatible pairing
-    const selectedPairing = compatiblePairings[this.rnd(0, compatiblePairings.length - 1)];
-    const targetGroup = compatibleGroups.find(g => g.name === selectedPairing[0])!;
-    const intruderGroup = compatibleGroups.find(g => g.name === selectedPairing[1])!;
-
-    const targetType = targetGroup.aircraft[this.rnd(0, targetGroup.aircraft.length - 1)];
-    const intruderType = intruderGroup.aircraft[this.rnd(0, intruderGroup.aircraft.length - 1)];
+    
+    const targetFlightRule = this.getWeightedSelection(flightRuleWeights);
+    const targetIsVFR = targetFlightRule === 'VFR';
+    
+    // Select target aircraft type based on flight rule (NEVER military)
+    let targetType: AcType;
+    if (targetIsVFR) {
+      targetType = VFR_TYPES[this.rnd(0, VFR_TYPES.length - 1)];
+    } else {
+      targetType = IFR_TYPES[this.rnd(0, IFR_TYPES.length - 1)];
+    }
+    
+    // Select intruder flight rule
+    const intruderFlightRule = this.getWeightedSelection(flightRuleWeights);
+    const intruderIsVFR = intruderFlightRule === 'VFR';
+    
+    // Select intruder aircraft type
+    let intruderType: AcType;
+    
+    // If INTRUDER is VFR, then it has 10% chance to be military
+    if (intruderIsVFR && Math.random() <= 0.10) {
+      // Military intruder (VFR military)
+      intruderType = MIL_TYPES[this.rnd(0, MIL_TYPES.length - 1)];
+    } else {
+      // Civilian intruder
+      if (intruderIsVFR) {
+        intruderType = VFR_TYPES[this.rnd(0, VFR_TYPES.length - 1)];
+      } else {
+        intruderType = IFR_TYPES[this.rnd(0, IFR_TYPES.length - 1)];
+      }
+    }
 
     return {
       targetType,
       intruderType,
-      targetIsVFR: targetGroup.isVFR,
-      intruderIsVFR: intruderGroup.isVFR
+      targetIsVFR,
+      intruderIsVFR
     };
   }
 
@@ -242,56 +344,73 @@ export class AviationTrafficGenerator {
     }
   }
 
-  private addSuffix(length: number, isVFR: boolean): string {
-    let str = "";
-    let repeat = isVFR && length > 2 ? (length === 5 ? 3 : 2) : 1;
-
-    // Add initial numbers
-    for (let i = 0; i < repeat; i++) {
-      str += Math.floor(Math.random() * 9 + 1).toString();
-    }
-
-    length -= str.length;
-    
-    // Add remaining characters (letters/numbers based on rules)
-    for (let i = 0; i < length; i++) {
-      const lastIsLetter = str[str.length - 1] && str[str.length - 1].match(/[A-Z]/);
-      const shouldAddLetter = lastIsLetter || Math.random() > (isVFR ? 0.1 : 0.75);
-      
-      if (shouldAddLetter) {
-        str += String.fromCharCode(65 + Math.floor(Math.random() * 26));
-      } else {
-        str += Math.floor(Math.random() * 10).toString();
-      }
-    }
-    return str;
-  }
-
   private looksLikeMilitaryCallsign(callsign: string): boolean {
     // Military pattern: 4-8 letters followed by 1-2 numbers
     return /^[A-Z]{4,8}\d{1,2}$/.test(callsign);
   }
 
   private generateCallsign(isVFR: boolean, role: 'target' | 'intruder' = 'target', isMil: boolean = false): string {
-    // Military callsign rule: only intruder when VFR and military flag is set
+    // Military VFR callsign: INTRUDER is VFR && INTRUDER is MIL
     if (role === 'intruder' && isVFR && isMil) {
       const base = this.militaryCallsigns[this.rnd(0, this.militaryCallsigns.length - 1)];
-      return base + Math.floor(Math.random() * 10).toString();
+      // Add two random numbers from 0 to 9 as a suffix
+      const suffix = (Math.floor(Math.random() * 10)).toString() + (Math.floor(Math.random() * 10)).toString();
+      return base + suffix;
     } 
     else if (isVFR) {
-      // VFR callsigns: weighted selection for length (matching reference code pattern)
-      const weights = [
-        { selection: 5, weight: 300 },
-        { selection: 4, weight: 150 },
-        { selection: 3, weight: 75 },
-        { selection: 2, weight: 20 },
-        { selection: 1, weight: 10 }
-      ];
-      const selection = this.getWeightedSelection(weights);
-      return this.addSuffix(selection, true);
+      // VFR callsigns: INTRUDER IS VFR (non-military)
+      const vfrData = this.vfrCallsigns[this.rnd(0, this.vfrCallsigns.length - 1)];
+      
+      if (vfrData.countryCode === "N") {
+        // Special US handling - as mentioned in the file
+        // "There is a different procedure for United States callsigns as they are the only ones actually containing numbers"
+        const weights = [
+          { selection: 1, weight: 100 }, // 1 number
+          { selection: 2, weight: 200 }, // 2 numbers  
+          { selection: 3, weight: 150 }  // 3 numbers
+        ];
+        const numCount = this.getWeightedSelection(weights);
+        let callsign = vfrData.countryCode;
+        
+        // Add numbers
+        for (let i = 0; i < numCount; i++) {
+          callsign += Math.floor(Math.random() * 10).toString();
+        }
+        
+        // Add letters
+        const letterCount = Math.random() > 0.5 ? 2 : 3;
+        for (let i = 0; i < letterCount; i++) {
+          callsign += String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        }
+        
+        return callsign;
+      } else {
+        // Other countries - use presentation pattern
+        // "Use the country code as prefix. Generate a suffix depending on the presentation."
+        let callsign = vfrData.countryCode;
+        const presentation = vfrData.presentation;
+        
+        for (let char of presentation) {
+          if (char === 'Z') {
+            // "any letter"
+            callsign += String.fromCharCode(65 + Math.floor(Math.random() * 26));
+          } else if (char === 'P') {
+            // "PZZ" means it can only contain 3 letters: the first one going from A to P
+            callsign += String.fromCharCode(65 + Math.floor(Math.random() * 16)); // A-P
+          } else if (char === 'W') {
+            // "WZZ" - W means A-W
+            callsign += String.fromCharCode(65 + Math.floor(Math.random() * 23)); // A-W
+          } else if (char === 'K') {
+            // "KZZ" means first letter K-Z
+            callsign += String.fromCharCode(75 + Math.floor(Math.random() * 11)); // K-Z
+          }
+        }
+        
+        return callsign;
+      }
     } 
     else {
-      // IFR callsigns: 3 letters + variable suffix with weighted selection
+      // IFR callsigns: INTRUDER IS IFR
       const airline = this.airlines[this.rnd(0, this.airlines.length - 1)];
       const weights = [
         { selection: 3, weight: 150 },
@@ -299,9 +418,19 @@ export class AviationTrafficGenerator {
         { selection: 2, weight: 20 },
         { selection: 1, weight: 10 }
       ];
-      const selection = this.getWeightedSelection(weights);
-      const suffix = this.addSuffix(selection, false);
-      return airline + suffix;
+      const suffixLength = this.getWeightedSelection(weights);
+      
+      let suffix = "";
+      for (let i = 0; i < suffixLength; i++) {
+        // From the file: if (str[str.length - 1].match(/[A-Z]/) || Math.random() > (target.isVFR ? 0.1 : 0.75))
+        if (suffix[suffix.length - 1] && suffix[suffix.length - 1].match(/[A-Z]/) || Math.random() > 0.75) {
+          suffix += String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        } else {
+          suffix += (Math.floor(Math.random() * 10)).toString();
+        }
+      }
+      
+      return airline.icao + suffix;
     }
   }
 
@@ -378,12 +507,8 @@ export class AviationTrafficGenerator {
   private generateAircraft(acType: AcType, isVFR: boolean, position: { x: number; y: number }, heading: number, speed: number, altitude?: number, allowLevelChange: boolean = true, role: 'target' | 'intruder' = 'target', targetIsVFR: boolean = false): Ac {
     const level = altitude ? this.roundToNearestFL(altitude) : this.roundToNearestFL(this.rnd(acType.altitude.min, acType.altitude.max));
     
-    // Military assignment logic (based on reference code)
-    let isMil = false;
-    if (role === 'intruder' && targetIsVFR) {
-      // 10% chance for military when target is VFR (reference: Math.random() > 0.10 ? false : true)
-      isMil = Math.random() <= 0.10;
-    }
+    // Check if this aircraft is military based on the aircraft type
+    const isMil = MIL_TYPES.includes(acType);
     
     const callsign = this.generateCallsign(isVFR, role, isMil);
     
@@ -689,9 +814,33 @@ export class AviationTrafficGenerator {
     this.assignLevelChange(target, intruder);
     
     const levelDiff = intruder.level - target.level;
-    const levelText = levelDiff === 0 ? 'same level' : 
-                     levelDiff > 0 ? `${Math.abs(levelDiff)} feet above` : 
-                     `${Math.abs(levelDiff)} feet below`;
+    let levelText = '';
+    
+    // Check if intruder is climbing or descending through target's level
+    if (intruder.levelChange) {
+      const isClimbingThrough = intruder.levelChange.dir === '↑' && 
+                               intruder.level < target.level && 
+                               intruder.levelChange.to >= target.level;
+      const isDescendingThrough = intruder.levelChange.dir === '↓' && 
+                                 intruder.level > target.level && 
+                                 intruder.levelChange.to <= target.level;
+      
+      if (isClimbingThrough) {
+        levelText = `${Math.abs(levelDiff)} feet below, climbing through your level`;
+      } else if (isDescendingThrough) {
+        levelText = `${Math.abs(levelDiff)} feet above, descending through your level`;
+      } else {
+        // Standard level change text
+        levelText = levelDiff === 0 ? 'same level' : 
+                   levelDiff > 0 ? `${Math.abs(levelDiff)} feet above` : 
+                   `${Math.abs(levelDiff)} feet below`;
+      }
+    } else {
+      // No level change
+      levelText = levelDiff === 0 ? 'same level' : 
+                 levelDiff > 0 ? `${Math.abs(levelDiff)} feet above` : 
+                 `${Math.abs(levelDiff)} feet below`;
+    }
     
     const wtcText = intruder.wtc === 'H' ? ', heavy' : '';
     

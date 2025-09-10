@@ -28,12 +28,13 @@ export default function HomePage() {
     setHasProgress(hasMeaningfulProgress(savedProgress));
   }, [state.settings.saveProgress, state.gamePhase]);
 
-  // Generate new exercise when moving to next exercise or retrying
+  // Generate new exercise when moving to next exercise, but NOT when retrying same exercise
   useEffect(() => {
     if (state.gamePhase === 'exercise') {
+      // Only generate new exercise when currentExercise number changes (not when retrying)
       setCurrentExercise(generateExercise());
     }
-  }, [state.session.currentExercise, state.gamePhase]);
+  }, [state.session.currentExercise]); // Removed state.gamePhase dependency
 
   // Update progress indicator
   useEffect(() => {
@@ -114,7 +115,7 @@ function StartScreen({ onStart, settings, onUpdateSettings, hasProgress }: {
   hasProgress: boolean;
 }) {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-custom-bg">
+    <main className="h-[100dvh] flex flex-col items-center justify-center p-4 bg-custom-bg">
       {/* Settings Button */}
       <div className="absolute top-4 right-4">
         <SettingsButton 
@@ -140,7 +141,7 @@ function StartScreen({ onStart, settings, onUpdateSettings, hasProgress }: {
         </button>
         
         {hasProgress && settings.saveProgress && (
-          <p className="text-sm text-blue-600 mt-3">
+          <p className="text-sm text-gray-600 mt-3">
             You have saved progress that will be restored
           </p>
         )}
@@ -226,37 +227,45 @@ function ExerciseScreen({
         </div>
       )}
 
-      {/* Button Section - Compact and always visible */}
-      <div className="space-y-2 pb-4">
+      {/* Button Section - Fixed height to prevent layout shifts */}
+      <div className="space-y-2 pb-4" style={{ minHeight: '120px' }}>
         {state.gamePhase === 'exercise' ? (
-          // Show Answer Button
-          <button
-            onClick={actions.showAnswer}
-            className="block w-full max-w-[380px] mx-auto px-5 py-3 bg-black text-white border-0 rounded-[10px] font-semibold"
-          >
-            Show Answer
-          </button>
-        ) : (
-          // Assessment Buttons
-          <>
+          // Show Answer and Next Exercise Buttons
+          <div className="space-y-2">
             <button
-              onClick={actions.toggleDetails}
-              className="block w-full max-w-[380px] mx-auto px-5 py-2 bg-gray-200 text-gray-800 border-0 rounded-[10px] font-medium text-sm mb-3"
+              onClick={actions.showAnswer}
+              className="block w-full max-w-[380px] mx-auto px-5 py-3 bg-black text-white border-0 rounded-[10px] font-semibold"
             >
-              {state.showDetails ? 'Hide Details' : 'Show Details'}
+              Show Answer
             </button>
             
-            <div className="grid grid-cols-2 gap-2 max-w-[380px] mx-auto">
+            <button
+              onClick={actions.nextExercise}
+              className="block w-full max-w-[380px] mx-auto px-5 py-2 bg-white text-black border-2 border-black rounded-[10px] font-medium hover:bg-gray-100 transition-colors"
+            >
+              Next Exercise
+            </button>
+          </div>
+        ) : (
+          // Assessment Buttons only
+          <>
+            <div className="grid grid-cols-2 gap-2 max-w-[380px] mx-auto mb-3">
               {ASSESSMENT_BUTTONS.map((button) => (
                 <button
                   key={button.option}
                   onClick={() => actions.submitAssessment(button.option)}
                   className={`px-3 py-2.5 rounded-[10px] font-medium text-white transition-colors ${
-                    button.color === 'green' ? 'bg-green-700 hover:bg-green-800' :
-                    button.color === 'yellow' ? 'bg-yellow-600 hover:bg-yellow-700' :
-                    button.color === 'orange' ? 'bg-orange-600 hover:bg-orange-700' :
-                    'bg-red-600 hover:bg-red-700'
+                    button.color === 'green' ? 'hover:bg-green-600' :
+                    button.color === 'yellow' ? 'hover:bg-yellow-600' :
+                    button.color === 'orange' ? 'hover:bg-orange-600' :
+                    'hover:bg-red-500'
                   }`}
+                  style={{
+                    backgroundColor: button.color === 'green' ? '#4CAF50' :
+                                   button.color === 'yellow' ? '#FFC107' :
+                                   button.color === 'orange' ? '#FF9800' :
+                                   '#F44336'
+                  }}
                 >
                   <div className="text-sm font-medium">{button.label}</div>
                   <div className="text-xs opacity-90 font-light">{button.description}</div>
@@ -288,7 +297,7 @@ function EndScreen({
   const scorePercentage = (session.totalScore / maxPossibleScore) * 100;
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4">
+    <main className="h-[100dvh] flex flex-col items-center justify-center p-4">
       {/* Settings Button */}
       <div className="absolute top-4 right-4">
         <SettingsButton 
