@@ -4,21 +4,21 @@
   --color-custom-bg: #f6f7f9;
   --color-custom-fg: #000;
   --color-custom-radar: #111;
-  --color-custom-ring: #222;
+  --color-custom-ring: #444;
   --color-custom-cross: #444;
   --color-custom-label-bg: rgba(0,0,0,0.6);
   --color-custom-text: #fff;
   --color-custom-target: #fff;
   --color-custom-intruder: #fff;
   
-  --font-family-system: system-ui, sans-serif;
+  --font-family-system: var(--font-inter), system-ui, sans-serif;
 }
 
 :root {
   --bg: #f6f7f9;
   --fg: #000;
   --radar: #111;
-  --ring: #222;
+  --ring: #444;
   --cross: #444;
   --label-bg: rgba(0,0,0,0.6);
   --text: #fff;
@@ -32,7 +32,7 @@ html, body, #__next {
   height: 100dvh;
   background: var(--bg);
   color: var(--fg);
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
   overflow: hidden;
 }
 

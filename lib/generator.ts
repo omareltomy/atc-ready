@@ -822,13 +822,18 @@ export class AviationTrafficGenerator {
                                intruder.level < target.level && 
                                intruder.levelChange.to >= target.level;
       const isDescendingThrough = intruder.levelChange.dir === '↓' && 
-                                 intruder.level > target.level && 
-                                 intruder.levelChange.to <= target.level;
+                                 intruder.level >= target.level && 
+                                 intruder.levelChange.to < target.level;
       
       if (isClimbingThrough) {
         levelText = `${Math.abs(levelDiff)} feet below, climbing through your level`;
       } else if (isDescendingThrough) {
-        levelText = `${Math.abs(levelDiff)} feet above, descending through your level`;
+        // If currently at target level and descending, should be "1000 feet below"
+        if (intruder.level === target.level) {
+          levelText = `1000 feet below, descending through your level`;
+        } else {
+          levelText = `${Math.abs(levelDiff)} feet above, descending through your level`;
+        }
       } else {
         // Standard level change text
         levelText = levelDiff === 0 ? 'same level' : 

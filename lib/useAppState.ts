@@ -249,13 +249,16 @@ export function useAppState() {
     }
   }, [state.session, state.gamePhase, state.showAnswer, state.showDetails, state.settings.saveProgress]);
 
-  // Save completed session and clear progress when session ends
+  // Save completed session and clear progress when session ends (only if saveProgress is enabled)
   useEffect(() => {
-    if (state.gamePhase === 'end') {
+    if (state.gamePhase === 'end' && state.settings.saveProgress) {
       saveCompletedSession(state.session);
       clearProgress();
+    } else if (state.gamePhase === 'end') {
+      // Just clear any existing progress, but don't save the session to statistics
+      clearProgress();
     }
-  }, [state.gamePhase, state.session]);
+  }, [state.gamePhase, state.session, state.settings.saveProgress]);
 
   // Action creators with proper typing
   const actions = {

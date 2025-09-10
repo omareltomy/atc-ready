@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Settings as SettingsType } from '../lib/types';
 import { getSessionStatistics } from '../lib/storage';
 
@@ -12,12 +12,35 @@ interface SettingsProps {
 
 export default function Settings({ settings, onUpdateSettings, onClose }: SettingsProps) {
   const [activeTab, setActiveTab] = useState<'general' | 'stats'>('general');
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const stats = getSessionStatistics();
 
+  // Handle click outside to close modal
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString();
+    
+    const lastPlayed = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - lastPlayed.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return '1 day ago';
+    return `${diffDays} days ago`;
   };
 
   return (
@@ -26,7 +49,7 @@ export default function Settings({ settings, onUpdateSettings, onClose }: Settin
       backdropFilter: 'blur(4px)',
       WebkitBackdropFilter: 'blur(4px)'
     }}>
-      <div className="bg-white rounded-lg max-w-md w-full shadow-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-lg max-w-md w-full shadow-2xl max-h-[90vh] flex flex-col" ref={modalRef}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
           <h2 className="text-xl font-bold">Settings</h2>

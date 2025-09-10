@@ -454,8 +454,8 @@ export default function Radar({ exercise }: Props) {
       }
       placed.push(chosen);
 
-      // Connector line
-      const cx2 = chosen.anchor === 'end' ? chosen.x + chosen.w : chosen.x;
+      // Connector line - point to halfway along the label width
+      const cx2 = chosen.x + chosen.w / 2; // Point to center of label width
       let cy2 = y;
       cy2 = Math.max(chosen.y, Math.min(cy2, chosen.y + chosen.h));
       const conn = document.createElementNS(svgNS, 'line');
@@ -467,17 +467,7 @@ export default function Radar({ exercise }: Props) {
       conn.setAttribute('stroke-width', '1');
       g.appendChild(conn);
 
-      // Label background
-      const bg2 = document.createElementNS(svgNS, 'rect');
-      bg2.setAttribute('x', String(chosen.x));
-      bg2.setAttribute('y', String(chosen.y));
-      bg2.setAttribute('width', String(chosen.w));
-      bg2.setAttribute('height', String(chosen.h));
-      bg2.setAttribute('fill', getComputedStyle(document.documentElement)
-        .getPropertyValue('--label-bg').trim());
-      g.appendChild(bg2);
-
-      // Label text - always left aligned
+      // Label text - no background, just text
       const txt = document.createElementNS(svgNS, 'text');
       const tx = chosen.x + 6; // Always left align
       txt.setAttribute('x', String(tx));

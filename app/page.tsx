@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { generateExercise, Exercise } from "../lib/generator";
 import { useAppState } from "../lib/useAppState";
 import { ASSESSMENT_BUTTONS, Settings as SettingsType } from "../lib/types";
@@ -8,6 +9,7 @@ import { loadProgress, clearProgress, hasMeaningfulProgress } from "../lib/stora
 import TrafficInfo from "../components/TrafficInfo";
 import SettingsButton from "../components/SettingsButton";
 import ProgressPrompt from "../components/ProgressPrompt";
+import InfoTooltip from "../components/InfoTooltip";
 
 export default function HomePage() {
   const { state, actions, computed } = useAppState();
@@ -126,13 +128,36 @@ function StartScreen({ onStart, settings, onUpdateSettings, hasProgress }: {
       </div>
 
       <div className="text-center max-w-md">
-        <h1 className="text-3xl font-bold mb-4 text-custom-fg">
-          ATC Ready
-        </h1>
-        <p className="text-lg mb-8 text-gray-700">
-          Practice giving traffic information with realistic radar scenarios. 
-          Complete {settings.totalExercises} exercises and track your progress.
-        </p>
+        <div className="mb-4 flex justify-center">
+          <Image 
+            src="/images/logo.svg" 
+            alt="ATC Ready" 
+            width={240} 
+            height={80}
+            priority
+          />
+        </div>
+        <div className="mb-8">
+          <div className="flex items-start justify-center">
+            <p className="text-lg text-gray-700">
+              Practice giving traffic information with realistic radar scenarios. 
+              Complete {settings.totalExercises} exercises and track your progress.
+            </p>
+            <InfoTooltip 
+              content={`About this exercise
+You'll practice giving traffic information in the standard format:
+Traffic, [clock position], [distance], [direction], [level], [other information]
+
+How to proceed:
+• A radar scenario will be shown.
+• Analyse the traffic and state the information out loud.
+• Compare with the model answer and self-assess.
+
+Example:
+"Traffic, 10 o'clock, 4 miles, crossing left to right, 1000 feet above, A320"`}
+            />
+          </div>
+        </div>
         <button
           onClick={onStart}
           className="w-full px-8 py-4 bg-black text-white rounded-[10px] font-semibold text-lg hover:bg-gray-800 transition-colors"

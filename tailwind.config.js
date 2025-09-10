@@ -19,7 +19,8 @@ module.exports = {
         'custom-intruder': '#fff',
       },
       fontFamily: {
-        'system': ['system-ui', 'sans-serif'],
+        'system': ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        'inter': ['var(--font-inter)', 'system-ui', 'sans-serif'],
       },
     },
   },
