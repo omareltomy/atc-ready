@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface InfoTooltipProps {
   content: string;
@@ -8,6 +8,18 @@ interface InfoTooltipProps {
 
 export default function InfoTooltip({ content }: InfoTooltipProps) {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
     <div className="relative inline-block">
@@ -22,13 +34,25 @@ export default function InfoTooltip({ content }: InfoTooltipProps) {
       </button>
       
       {showTooltip && (
-        <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4">
-          <div className="text-[0.8rem] text-gray-800 whitespace-pre-line">
+        <div className={`absolute mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4 ${
+          isMobile 
+            ? 'right-0 w-72 max-w-[90vw]' 
+            : 'left-1/2 transform -translate-x-1/2 w-80'
+        }`}>
+          <div className="text-sm text-gray-800 whitespace-pre-line">
             {content}
           </div>
           {/* Arrow pointing up */}
-          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-l-transparent border-r-transparent border-b-white"></div>
-          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[7px] border-r-[7px] border-b-[7px] border-l-transparent border-r-transparent border-b-gray-200 mb-[-1px]"></div>
+          <div className={`absolute bottom-full w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-l-transparent border-r-transparent border-b-white ${
+            isMobile 
+              ? 'right-6' 
+              : 'left-1/2 transform -translate-x-1/2'
+          }`}></div>
+          <div className={`absolute bottom-full w-0 h-0 border-l-[7px] border-r-[7px] border-b-[7px] border-l-transparent border-r-transparent border-b-gray-200 mb-[-1px] ${
+            isMobile 
+              ? 'right-[23px]' 
+              : 'left-1/2 transform -translate-x-1/2'
+          }`}></div>
         </div>
       )}
     </div>

@@ -343,7 +343,7 @@ function EndScreen({
           
           <div className="space-y-2 text-sm">
             <div>Exercises Completed: {computed.completedExercises}/{session.totalExercises}</div>
-            <div>Average Score: {computed.averageScore.toFixed(1)} points</div>
+            <div>Average Score: {computed.averageScore.toFixed(1)}%</div>
             <div>Session Duration: {Math.round((new Date().getTime() - session.startTime.getTime()) / 60000)} minutes</div>
           </div>
         </div>

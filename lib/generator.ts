@@ -251,14 +251,19 @@ export class AviationTrafficGenerator {
   }
 
   private selectCompatibleAircraft(): { targetType: AcType; intruderType: AcType; targetIsVFR: boolean; intruderIsVFR: boolean } {
-    // Flight rule distribution (based on requirements)
+    // Flight rule distribution (based on final requirements: 75% VFR, 25% IFR)
     const flightRuleWeights = [
-      { selection: 'VFR', weight: 30 },
-      { selection: 'IFR', weight: 70 }
+      { selection: 'VFR', weight: 75 },
+      { selection: 'IFR', weight: 25 }
     ];
     
     const targetFlightRule = this.getWeightedSelection(flightRuleWeights);
     const targetIsVFR = targetFlightRule === 'VFR';
+    
+    // IMPORTANT: Both target and intruder must have the same flight rule
+    // When target is VFR, intruder must also be VFR
+    // When target is IFR, intruder must also be IFR
+    const intruderIsVFR = targetIsVFR;
     
     // Select target aircraft type based on flight rule (NEVER military)
     let targetType: AcType;
@@ -267,10 +272,6 @@ export class AviationTrafficGenerator {
     } else {
       targetType = IFR_TYPES[this.rnd(0, IFR_TYPES.length - 1)];
     }
-    
-    // Select intruder flight rule
-    const intruderFlightRule = this.getWeightedSelection(flightRuleWeights);
-    const intruderIsVFR = intruderFlightRule === 'VFR';
     
     // Select intruder aircraft type
     let intruderType: AcType;
@@ -301,11 +302,32 @@ export class AviationTrafficGenerator {
     const minAltitude = Math.max(targetType.altitude.min, intruderType.altitude.min);
     const maxAltitude = Math.min(targetType.altitude.max, intruderType.altitude.max);
     
-    // If no overlap, use individual ranges but keep them closer
+    // If no overlap, force them into a relevant altitude range for traffic scenarios
     if (minAltitude > maxAltitude) {
-      // Use each aircraft's optimal altitude range
-      const targetAltitude = this.roundToNearestFL(this.rnd(targetType.altitude.min, targetType.altitude.max));
-      const intruderAltitude = this.roundToNearestFL(this.rnd(intruderType.altitude.min, intruderType.altitude.max));
+      // For ATC training, aircraft should be at relevant altitudes for traffic separation
+      // Choose a reasonable middle altitude that both aircraft could realistically operate at
+      let baseAltitude: number;
+      
+      if (targetIsVFR && !intruderIsVFR) {
+        // VFR target with IFR intruder - use higher VFR range (around 4000-6000)
+        baseAltitude = this.roundToNearestFL(this.rnd(4000, 6000));
+      } else if (!targetIsVFR && intruderIsVFR) {
+        // IFR target with VFR intruder - use lower IFR range (around 4000-6000)
+        baseAltitude = this.roundToNearestFL(this.rnd(4000, 6000));
+      } else {
+        // Both same type but different altitude ranges - use midpoint
+        const midTarget = (targetType.altitude.min + targetType.altitude.max) / 2;
+        const midIntruder = (intruderType.altitude.min + intruderType.altitude.max) / 2;
+        baseAltitude = this.roundToNearestFL((midTarget + midIntruder) / 2);
+      }
+      
+      // Add some vertical separation (max 1000 feet for relevance)
+      const separations = [-1000, -500, 0, 500, 1000];
+      const separation = separations[this.rnd(0, separations.length - 1)];
+      
+      const targetAltitude = this.roundToNearestFL(baseAltitude);
+      const intruderAltitude = this.roundToNearestFL(baseAltitude + separation);
+      
       return { targetAltitude, intruderAltitude };
     }
     
@@ -422,11 +444,16 @@ export class AviationTrafficGenerator {
       
       let suffix = "";
       for (let i = 0; i < suffixLength; i++) {
-        // From the file: if (str[str.length - 1].match(/[A-Z]/) || Math.random() > (target.isVFR ? 0.1 : 0.75))
-        if (suffix[suffix.length - 1] && suffix[suffix.length - 1].match(/[A-Z]/) || Math.random() > 0.75) {
-          suffix += String.fromCharCode(65 + Math.floor(Math.random() * 26));
-        } else {
+        if (i === 0) {
+          // First character after airline code MUST be a number
           suffix += (Math.floor(Math.random() * 10)).toString();
+        } else {
+          // For subsequent characters, use the existing logic
+          if (suffix[suffix.length - 1] && suffix[suffix.length - 1].match(/[A-Z]/) || Math.random() > 0.75) {
+            suffix += String.fromCharCode(65 + Math.floor(Math.random() * 26));
+          } else {
+            suffix += (Math.floor(Math.random() * 10)).toString();
+          }
         }
       }
       
@@ -485,15 +512,21 @@ export class AviationTrafficGenerator {
       // Calculate new level (crossing through target's level)
       let newLevel: number;
       if (isAboveTarget) {
-        // Descending: go to target level or slightly below
-        newLevel = this.roundToNearestFL(targetLevel - this.rnd(0, 1000));
+        // Descending: go below target level (ensure it goes THROUGH, not TO the target level)
+        newLevel = this.roundToNearestFL(targetLevel - this.rnd(500, 1500));
       } else {
-        // Climbing: go to target level or slightly above  
-        newLevel = this.roundToNearestFL(targetLevel + this.rnd(0, 1000));
+        // Climbing: go above target level (ensure it goes THROUGH, not TO the target level)
+        newLevel = this.roundToNearestFL(targetLevel + this.rnd(500, 1500));
       }
       
-      // Ensure reasonable bounds
+      // Ensure reasonable bounds and that we actually go THROUGH the target level
       newLevel = Math.max(1000, Math.min(41000, newLevel));
+      
+      // Double-check that we're actually going through the target level, not to it
+      if ((isAboveTarget && newLevel >= targetLevel) || (!isAboveTarget && newLevel <= targetLevel)) {
+        // If the bounds adjustment caused us to not go through the target level, skip level change
+        return;
+      }
       
       if (newLevel !== intruderLevel) {
         intruder.levelChange = {
@@ -813,6 +846,12 @@ export class AviationTrafficGenerator {
     // Assign level changes based on new requirements
     this.assignLevelChange(target, intruder);
     
+    // Calculate actual current distance between aircraft
+    const dx = intruder.position.x - target.position.x;
+    const dy = intruder.position.y - target.position.y;
+    const actualDistance = Math.sqrt(dx * dx + dy * dy);
+    const roundedActualDistance = Math.round(actualDistance);
+    
     const levelDiff = intruder.level - target.level;
     let levelText = '';
     
@@ -849,14 +888,14 @@ export class AviationTrafficGenerator {
     
     const wtcText = intruder.wtc === 'H' ? ', heavy' : '';
     
-    const solution = `${target.callsign}, traffic, ${clock} o'clock, ${distance} miles, ${direction}, ${levelText}, ${intruder.type.type}${wtcText}`;
+    const solution = `${target.callsign}, traffic, ${clock} o'clock, ${roundedActualDistance} miles, ${direction}, ${levelText}, ${intruder.type.type}${wtcText}`;
     
     return {
       target,
       intruder,
       situation: {
         clock,
-        distance,
+        distance: roundedActualDistance,
         direction,
         level: levelText
       },

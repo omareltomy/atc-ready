@@ -198,7 +198,7 @@ export function getSessionStatistics(): SessionStats {
     current.scorePercentage > best.scorePercentage ? current : best
   );
   
-  const averageScore = totalSessions > 0 ? totalScore / totalSessions : 0;
+  const averageScore = totalSessions > 0 ? (totalScore / totalSessions / (totalPossibleScore / totalSessions)) * 100 : 0;
   const completionRate = totalPossibleScore > 0 ? (totalScore / totalPossibleScore) * 100 : 0;
   
   return {

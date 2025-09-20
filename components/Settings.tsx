@@ -135,7 +135,7 @@ export default function Settings({ settings, onUpdateSettings, onClose }: Settin
                   <div className="text-sm text-gray-600">Exercises Completed</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="text-2xl font-bold text-black">{stats.averageScore.toFixed(1)}</div>
+                  <div className="text-2xl font-bold text-black">{stats.averageScore.toFixed(1)}%</div>
                   <div className="text-sm text-gray-600">Average Score</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">

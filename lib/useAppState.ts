@@ -297,7 +297,7 @@ export function useAppState() {
     isLastExercise: state.session.currentExercise >= state.session.totalExercises,
     progressPercentage: (state.session.currentExercise / state.session.totalExercises) * 100,
     averageScore: state.session.scores.length > 0 
-      ? state.session.totalScore / state.session.scores.length 
+      ? (state.session.totalScore / state.session.scores.length / 3) * 100 
       : 0,
     completedExercises: state.session.scores.filter(s => s.option !== 'again').length,
   };
