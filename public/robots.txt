@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Block admin areas (if any in future)
+Disallow: /admin/
+Disallow: /api/private/
+
+# Allow important resources
+Allow: /images/
+Allow: /favicon.ico
+Allow: /manifest.json
+
+# Sitemap location
+Sitemap: https://training.atcready.com/sitemap.xml
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1

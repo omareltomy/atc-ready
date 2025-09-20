@@ -1,22 +1,51 @@
-# ATC Training Exercise Generator
+# ATC Ready - Air Traffic Control Training Platform
 
-A sophisticated aviation training system that generates realistic Air Traffic Control (ATC) scenarios for pilot training.
+🛩️ **Master Air Traffic Control Communications with Interactive Training**
 
-## 🚀 Features
+ATC Ready is a sophisticated aviation training platform that generates realistic Air Traffic Control (ATC) scenarios for pilots, air traffic controllers, and aviation students. Practice your communication skills, improve response times, and build confidence for real-world ATC operations.
 
-- **Realistic Traffic Patterns**: Implements official ATC direction definitions
-- **Smart Path Intersection**: Ensures aircraft will actually meet within radar range  
-- **Accurate Positioning**: Clock positions relative to aircraft heading
-- **Diverse Aircraft Types**: VFR, IFR, and military aircraft with proper callsigns
-- **Interactive Radar Display**: Visual representation of traffic scenarios
+🌐 **Live Demo**: [training.atcready.com](https://training.atcready.com)
 
-## 🎯 Quick Start
+## ✨ Key Features
+
+### 🎯 Realistic Training Scenarios
+- **Authentic Traffic Patterns**: Implements official ATC direction definitions and real-world procedures
+- **Smart Path Intersection**: Ensures aircraft will actually meet within radar range for meaningful training
+- **Dynamic Conflict Resolution**: Practice handling various traffic separation scenarios
+
+### 🛡️ Comprehensive Aircraft Database
+- **VFR Aircraft**: General aviation aircraft with realistic callsigns and performance characteristics
+- **IFR Aircraft**: Commercial aviation with airline callsigns and proper flight levels
+- **Military Aircraft**: Military operations with authentic procedures and callsigns
+- **Accurate Performance**: Speed, altitude, and operational envelope modeling
+
+### 📡 Interactive Radar Display
+- **Professional Interface**: Realistic radar scope with range rings and navigation aids
+- **Real-time Updates**: Dynamic aircraft positioning and label management
+- **Visual Feedback**: Clear traffic separation visualization and conflict prediction
+
+### 📚 Educational Tools
+- **Progressive Learning**: Start with simple scenarios and advance to complex situations
+- **Performance Tracking**: Monitor your improvement over time with detailed statistics
+- **Instant Feedback**: Immediate assessment of your traffic advisory calls
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn package manager
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/atc-ready.git
+cd atc-ready
+
 # Install dependencies
 npm install
 
-# Run the application
+# Start the development server
 npm run dev
 
 # Generate sample exercises

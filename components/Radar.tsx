@@ -220,15 +220,6 @@ export default function Radar({ exercise }: Props) {
       vec.setAttribute('stroke-width', '2');
       g.appendChild(vec);
 
-      // Aircraft square
-      const sq = document.createElementNS(svgNS, 'rect');
-      sq.setAttribute('x', String(x - 4));
-      sq.setAttribute('y', String(y - 4));
-      sq.setAttribute('width', '8');
-      sq.setAttribute('height', '8');
-      sq.setAttribute('fill', color);
-      g.appendChild(sq);
-
       // Advanced force-directed label placement algorithm
       const formatLevel = (level: number, isVFR: boolean) => {
         if (isVFR) {
@@ -328,104 +319,17 @@ export default function Radar({ exercise }: Props) {
             hasHardConflict = true;
           }
 
-          if (hasHardConflict) continue;
-
-          // Soft penalties (reduce score but don't disqualify)
-          
-          // History dot conflicts
-          const historyConflicts = historyDotAreas.filter(dotArea => overlap(rect, dotArea)).length;
-          score -= historyConflicts * 25;
-
-          // Proximity penalties for nearby aircraft
-          for (const area of aircraftAreas) {
-            const acCenterX = area.x + area.w / 2;
-            const acCenterY = area.y + area.h / 2;
-            const labelCenterX = labelX + boxW / 2;
-            const labelCenterY = labelY + boxH / 2;
-            const proximity = Math.sqrt(
-              Math.pow(acCenterX - labelCenterX, 2) + 
-              Math.pow(acCenterY - labelCenterY, 2)
-            );
-            if (proximity < 50) {
-              score -= (50 - proximity) * 1.5; // Penalty for being too close
-            }
-          }
-
-          // Leader line crossing penalty
-          const labelConnectionLine = { 
-            x1: x, y1: y, 
-            x2: labelX + boxW/2, y2: labelY + boxH/2 
-          };
-          let crossingCount = 0;
-          for (const area of aircraftAreas) {
-            if (linesIntersect(labelConnectionLine, area.leaderLine)) {
-              crossingCount++;
-            }
-          }
-          score -= crossingCount * 40;
-
-          // Angle quality bonus (prefer perpendicular to aircraft motion)
-          const connectionAngle = Math.atan2(
-            labelY + boxH/2 - y, 
-            labelX + boxW/2 - x
-          ) * 180 / Math.PI;
-          const headingDiff = Math.abs(((connectionAngle - leaderAngle + 540) % 360) - 180);
-          const perpendicularity = Math.abs(headingDiff - 90) / 90; // 0 = perpendicular, 1 = parallel
-          score += (1 - perpendicularity) * 25; // Bonus for perpendicular placement
-
-          candidates.push({
-            x: labelX, y: labelY, w: boxW, h: boxH,
-            score, anchor: pos.anchor, distance
-          });
-        }
-      }
-
-      // Simulated annealing for dense scenarios
-      if (candidates.length === 0 || Math.max(...candidates.map(c => c.score)) < 30) {
-        const gridResolution = 15;
-        const searchRadius = 120;
-        
-        for (let gx = -searchRadius; gx <= searchRadius; gx += gridResolution) {
-          for (let gy = -searchRadius; gy <= searchRadius; gy += gridResolution) {
-            const distance = Math.sqrt(gx*gx + gy*gy);
-            if (distance < 35 || distance > searchRadius) continue;
-
-            const labelX = x + gx - boxW/2;
-            const labelY = y + gy - boxH/2;
-
-            const corners = [
-              { x: labelX, y: labelY },
-              { x: labelX + boxW, y: labelY },
-              { x: labelX, y: labelY + boxH },
-              { x: labelX + boxW, y: labelY + boxH }
-            ];
+          if (!hasHardConflict) {
+            let score = 40 - Math.abs(distance - 75) * 0.2; // Prefer moderate distance
             
-            const withinBounds = corners.every(corner => {
-              const distFromCenter = Math.sqrt(corner.x * corner.x + corner.y * corner.y);
-              return distFromCenter <= maxRadius;
+            // History dot avoidance bonus
+            const historyFree = !historyDotAreas.some(dotArea => overlap(rect, dotArea));
+            if (historyFree) score += 30;
+
+            candidates.push({
+              x: labelX, y: labelY, w: boxW, h: boxH,
+              score, anchor: 'start', distance
             });
-
-            if (!withinBounds) continue;
-
-            const rect = { x: labelX, y: labelY, w: boxW, h: boxH };
-            
-            // Quick conflict resolution
-            const hasConflict = aircraftAreas.some(area => 
-              overlap(rect, area) || rectIntersectsLine(rect, area.leaderLine)
-            ) || placed.some(r => overlap(r, rect));
-
-            if (!hasConflict) {
-              let score = 40 - Math.abs(distance - 75) * 0.2; // Prefer moderate distance
-              
-              // History dot avoidance bonus
-              const historyFree = !historyDotAreas.some(dotArea => overlap(rect, dotArea));
-              if (historyFree) score += 30;
-
-              candidates.push({
-                x: labelX, y: labelY, w: boxW, h: boxH,
-                score, anchor: 'start', distance
-              });
-            }
           }
         }
       }
@@ -454,7 +358,7 @@ export default function Radar({ exercise }: Props) {
       }
       placed.push(chosen);
 
-      // Connector line - point to halfway along the label width
+      // Connector line - point to halfway along the label width (DRAW BEFORE AIRCRAFT SQUARE)
       const cx2 = chosen.x + chosen.w / 2; // Point to center of label width
       let cy2 = y;
       cy2 = Math.max(chosen.y, Math.min(cy2, chosen.y + chosen.h));
@@ -467,7 +371,16 @@ export default function Radar({ exercise }: Props) {
       conn.setAttribute('stroke-width', '1');
       g.appendChild(conn);
 
-      // Label text - no background, just text
+      // Aircraft square (NOW DRAWN ON TOP OF LEADER LINE)
+      const sq = document.createElementNS(svgNS, 'rect');
+      sq.setAttribute('x', String(x - 4));
+      sq.setAttribute('y', String(y - 4));
+      sq.setAttribute('width', '8');
+      sq.setAttribute('height', '8');
+      sq.setAttribute('fill', color);
+      g.appendChild(sq);
+
+      // Label text - no background, just text (DRAW AFTER AIRCRAFT SQUARE)
       const txt = document.createElementNS(svgNS, 'text');
       const tx = chosen.x + 6; // Always left align
       txt.setAttribute('x', String(tx));
