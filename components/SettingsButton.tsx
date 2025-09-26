@@ -10,7 +10,7 @@ interface SettingsButtonProps {
   hasProgress?: boolean;
 }
 
-export default function SettingsButton({ settings, onUpdateSettings, hasProgress: _hasProgress }: SettingsButtonProps) {
+export default function SettingsButton({ settings, onUpdateSettings }: SettingsButtonProps) {
   const [showSettings, setShowSettings] = useState(false);
 
   return (

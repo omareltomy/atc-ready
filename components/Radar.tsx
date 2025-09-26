@@ -321,7 +321,7 @@ export default function Radar({ exercise }: Props) {
 
       // 🔸 STEP 1: DRAW HISTORY DOTS (breadcrumb trail)
       // These show where the airplane has been (like dots in Pac-Man!)
-      ac.history.forEach((p: { x: number; y: number }, _index: number) => {  // Added types to fix TypeScript
+      ac.history.forEach((p: { x: number; y: number }) => {  // Added types to fix TypeScript
         const d = document.createElementNS(svgNS, 'circle');
         d.setAttribute('cx', String(toPx(p.x)));           // Dot X position
         d.setAttribute('cy', String(-toPx(p.y)));          // Dot Y position (flipped)
