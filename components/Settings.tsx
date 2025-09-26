@@ -63,13 +63,13 @@ export default function Settings({ settings, onUpdateSettings, onClose }: Settin
 
         {/* Tabs */}
         <div className="flex border-b flex-shrink-0">
-          {[
-            { id: 'general', label: 'General' },
-            { id: 'stats', label: 'Statistics' },
-          ].map((tab) => (
+          {([
+            { id: 'general' as const, label: 'General' },
+            { id: 'stats' as const, label: 'Statistics' },
+          ] as const).map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               className={`flex-1 py-3 px-4 text-sm font-medium ${
                 activeTab === tab.id
                   ? 'text-black border-b-2 border-black'

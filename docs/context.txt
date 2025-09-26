@@ -1,0 +1,177 @@
+# Complete Test Context for Generator Code
+
+## Aircraft Generation Rules
+
+### VFR vs IFR Distribution
+- **VFR probability**: 75%
+- **IFR probability**: 25%
+- When target is VFR, intruder must also be VFR (exercises should never mix IFR with VFR traffic)
+- Level difference between VFR aircraft should be within 200-1000 feet of target
+
+### Aircraft Types Based on Flight Type
+- **VFR**: Only use VFR aircraft types (from vfr aircraft list in data.js)
+- **IFR**: Only use IFR aircraft types
+- **Military**: Only use military aircraft types (only intruder can be military, never target)
+
+### Aircraft Levels
+- Flight levels should ALWAYS be rounded to the nearest 10
+- When aircraft is flying in flight levels, label should simply show the number (e.g., 070 not FL070)
+- Initial level difference between aircraft should never be greater than 1000 feet
+- For IFR flights: exactly 1000 feet difference (could be less for VFR)
+
+## Callsign Generation Rules
+
+### Military Callsigns (Only for VFR Intruders)
+- **Probability**: 10% chance if intruder is VFR
+- **Format**: Select random from milCallsign list + two random numbers (0-9)
+- **Example**: TRITN02
+- **List**: REDARROW, ANGE, LHOB, MILAN, REF, BENGA, VOLPE, FIAMM, HKY, RRR, HR, VVAJ, BAF, RCH, CFC, SPARTA, BRK, ROF, OR, COBRA, SRA, RNGR, BOMR, WOLF, TRITN, RESQ
+
+### VFR Callsigns
+- **Format**: Country code + suffix based on presentation rules
+- No dash (-) between prefix and suffix on radar screen
+- Always consist of 5 letters total with specified prefix
+- **Presentation Rules**:
+  - "PZZ": First letter A-P, last two any letters
+  - "KZZ", "ZZZ": Any letters
+  - "ZZZZ": Any letters (4 characters)
+  - "WZZ": First letter specific, others any
+  - "1AA-999ZZ": US format with numbers (special handling)
+
+### IFR Callsigns
+- **Format**: ICAO prefix + suffix (1-4 characters)
+- **First character after initial 3 letters must be a number**
+- **Suffix generation weights**:
+  - 3 characters: 150 weight
+  - 4 characters: 45 weight
+  - 2 characters: 20 weight
+  - 1 character: 10 weight
+- **Character generation logic**: After first number, random chance for letter/number but maintain consistency
+
+## Direction Generation Rules
+
+### Direction Probabilities
+- **Crossing left to right**: 28%
+- **Crossing right to left**: 28%
+- **Converging**: 28%
+- **Opposite direction**: 11%
+- **Overtaking**: 5%
+
+### Direction-Specific Rules
+
+#### Crossing Left to Right
+- Clock position: 10 or 11
+- Distance: 3-8 miles
+- Angle of convergence: 55°-125°
+- Intersection angle: 45°-135° to the left
+
+#### Crossing Right to Left
+- Clock position: 1 or 2
+- Distance: 3-8 miles
+- Angle of convergence: 55°-125°
+- Intersection angle: 45°-135° to the right
+
+#### Converging
+- Clock position: 2, 3, 9, or 10
+- Distance: 2-5 miles
+- Angle of convergence: less than 40°
+- Intersection angle: less than 45°
+
+#### Opposite Direction
+- Clock position: 12 (with ±10° variation allowed)
+- Distance: 4-9 miles
+- Angle of convergence: NOT less than 170°
+- Intersection angle: greater than 315°
+- Point of intersection: halfway between both aircraft
+
+#### Overtaking
+- Clock position: 5, 6, or 7
+- Distance: 2-6 miles
+- Intruder same direction as target
+- Intruder speed > target speed
+
+## Distance and Intersection Rules
+- **Intersection point**: Randomized between 2-6 miles
+- **Intersection distance margin**: ±2 miles same distance from each aircraft
+- **Ensure aircraft actually have intersection point** (paths must cross)
+
+## Level Change Rules
+- **Descending through level**: When intruder descends TO target level -1000 feet (not same level)
+- **Climbing through level**: Same logic in opposite direction
+- **Level change format**: "descending through your level" or "climbing through your level"
+- **Level changes**: Always rounded to nearest 10
+- **Target aircraft**: Should have static level (no level changes)
+- **Only apply level change**: When aircraft are at different levels and intruder crosses target level
+
+## Speed and Visual Elements
+
+### Leader Lines
+- **Length scaling**: 15 pixels for 60 knots, 45 pixels for 350 knots
+- **Speed range**: 60-350 knots
+- **Purpose**: Shows future position in 1 minute
+
+### History Dots
+- **Quantity**: Always 3 dots
+- **Scaling**: Based on speed (60-350 knots range)
+- **Positioning**: Should be closer together, don't fade away
+- **Spacing**: About 2-3 pixels from aircraft square
+
+## Label Generation Rules
+
+### Label Format
+```
+V (only if VFR)
+Callsign - WTC - Type
+Level - Level Change - Speed
+```
+
+### Label Positioning
+- **Always left-aligned** (even when on left of aircraft)
+- **Line breaks**: Required between sections
+- **No background color**: Just text
+- **Avoid overlaps**: With other aircraft, labels, leader lines, history dots
+- **Aesthetic placement**: Clear and out of way of other information
+- **Leader line position**: Should point to halfway point of callsign length
+
+### Aircraft Type Display
+- Use abbreviated type from data.js (not full name)
+- Full name only used for solutions
+
+## Visual Styling Requirements
+
+### Colors
+- **Target aircraft**: White
+- **Background rings**: More visible opacity (same as distance text)
+- **All blacks**: Change to #1F1F1F
+- **Hover elements**: #003B73
+
+### UI Elements
+- **Show Answer button hover**: #003B73
+- **History dots**: Proper spacing from square
+- **Aircraft square**: Should be on top of leader line
+- **Label lines**: Below aircraft square (square on top)
+
+## Solution Generation Rules
+- Include level change information when applicable
+- Format: "Traffic, [clock position], [distance], [direction], [level], [level change], [aircraft type]"
+- Example: "ETH0UI, traffic, 2 o'clock, 4 miles, crossing right to left, 1000 feet above, descending through your level, A320"
+
+## Data Validation Requirements
+- Aircraft paths must actually intersect
+- No irrelevant level traffic generation
+- Proper distance calculations (sometimes generated at wrong distances like not exactly 6 miles)
+- Level differences must be logical and within specified ranges
+- Callsigns must follow real-world aviation standards
+- Direction classifications must be accurate based on intersection angles
+
+## Mobile Responsiveness
+- Question mark pop-up should not appear half outside screen
+- Media queries needed for mobile layout fixes
+
+## Functional Requirements
+- VFR probability should be exactly 75%
+- Military aircraft only as intruders with 10% chance when target is VFR
+- No mixing of IFR and VFR in same exercise
+- Level changes only when aircraft at different levels
+- Proper intersection point calculations
+- Accurate distance and angle measurements

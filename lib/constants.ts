@@ -129,3 +129,162 @@ export const MIL_TYPES: AcType[] = [
     altitude: { min: 5000, max: 41000 },
   },
 ];
+
+/**
+ * Direction weights for aviation traffic scenarios
+ * Based on context.txt requirements for realistic ATC training
+ */
+export interface DirectionWeight {
+  direction: string;
+  weight: number;
+}
+
+export const DIRECTION_WEIGHTS: DirectionWeight[] = [
+  { direction: 'crossing left to right', weight: 28 },
+  { direction: 'crossing right to left', weight: 28 },
+  { direction: 'converging', weight: 28 },
+  { direction: 'opposite direction', weight: 11 },
+  { direction: 'overtaking', weight: 5 }
+];
+
+/**
+ * Military callsigns for VFR intruder aircraft
+ * Used when target is VFR and intruder is military (10% chance)
+ */
+export const MILITARY_CALLSIGNS: string[] = [
+  "REDARROW", "ANGE", "LHOB", "MILAN", "REF", "BENGA", "VOLPE", "FIAMM", 
+  "HKY", "RRR", "HR", "VVAJ", "BAF", "RCH", "CFC", "SPARTA", "BRK", "ROF", 
+  "OR", "COBRA", "SRA", "RNGR", "BOMR", "WOLF", "TRITN", "RESQ"
+];
+
+/**
+ * VFR callsign patterns by country
+ * Used for generating realistic VFR aircraft callsigns
+ */
+export interface VfrCallsignPattern {
+  country: string;
+  countryCode: string;
+  presentation: string;
+}
+
+export const VFR_CALLSIGN_PATTERNS: VfrCallsignPattern[] = [
+  { country: "Belgium", countryCode: "OO", presentation: "PZZ" },
+  { country: "Austria", countryCode: "OE", presentation: "KZZ" },
+  { country: "Bulgaria", countryCode: "LZ", presentation: "ZZZ" },
+  { country: "Czech Republic", countryCode: "OK", presentation: "ZZZ" },
+  { country: "Slovakia", countryCode: "OM", presentation: "ZZZ" },
+  { country: "Estonia", countryCode: "ES", presentation: "ZZZ" },
+  { country: "Isle of Man", countryCode: "M", presentation: "ZZZZ" },
+  { country: "Finland", countryCode: "OH", presentation: "ZZZ" },
+  { country: "Germany", countryCode: "DE", presentation: "ZZZ" },
+  { country: "France", countryCode: "F", presentation: "ZZZZ" },
+  { country: "Italy", countryCode: "I", presentation: "ZZZZ" },
+  { country: "Hungary", countryCode: "HA", presentation: "ZZZ" },
+  { country: "Ireland", countryCode: "IE", presentation: "ZZZ" },
+  { country: "Latvia", countryCode: "YL", presentation: "ZZZ" },
+  { country: "Lithuania", countryCode: "LY", presentation: "ZZZ" },
+  { country: "Luxembourg", countryCode: "LX", presentation: "ZZZ" },
+  { country: "Netherlands", countryCode: "PH", presentation: "ZZZ" },
+  { country: "Norway", countryCode: "LN", presentation: "ZZZ" },
+  { country: "Poland", countryCode: "SP", presentation: "ZZZ" },
+  { country: "Portugal", countryCode: "CR", presentation: "ZZZ" },
+  { country: "Spain", countryCode: "EC", presentation: "WZZ" },
+  { country: "Sweden", countryCode: "SE", presentation: "ZZZ" },
+  { country: "Switzerland", countryCode: "HB", presentation: "ZZZ" },
+  { country: "Serbia", countryCode: "YU", presentation: "ZZZ" },
+  { country: "United Kingdom", countryCode: "G", presentation: "ZZZZ" },
+  { country: "United States", countryCode: "N", presentation: "1AA-999ZZ" },
+  { country: "Denmark", countryCode: "OY", presentation: "ZZZ" }
+];
+
+/**
+ * Airline data for IFR callsign generation
+ * Contains ICAO codes and radio callsigns for commercial airlines
+ */
+export interface AirlineData {
+  icao: string;
+  callsign: string;
+}
+
+export const AIRLINES: AirlineData[] = [
+  { icao: "AAL", callsign: "american" },
+  { icao: "ACA", callsign: "air canada" },
+  { icao: "AFR", callsign: "air france" },
+  { icao: "AUA", callsign: "austrian" },
+  { icao: "BAW", callsign: "speedbird" },
+  { icao: "BTI", callsign: "air baltic" },
+  { icao: "AAB", callsign: "abelag" },
+  { icao: "AIC", callsign: "air inida" },
+  { icao: "ANA", callsign: "all nippon" },
+  { icao: "ASL", callsign: "air serbia" },
+  { icao: "BEL", callsign: "beeline" },
+  { icao: "BLX", callsign: "bluescan" },
+  { icao: "CAI", callsign: "corendon" },
+  { icao: "CAO", callsign: "airchina freight" },
+  { icao: "CES", callsign: "china eastern" },
+  { icao: "CHH", callsign: "hainan" },
+  { icao: "CLG", callsign: "challair" },
+  { icao: "CTN", callsign: "croatia" },
+  { icao: "CYP", callsign: "cyprair" },
+  { icao: "DAL", callsign: "delta" },
+  { icao: "DLA", callsign: "dolomiti" },
+  { icao: "DLH", callsign: "lufthansa" },
+  { icao: "EDW", callsign: "edelweiss" },
+  { icao: "EIN", callsign: "shamrock" },
+  { icao: "EJA", callsign: "execjet" },
+  { icao: "EJU", callsign: "alpine" },
+  { icao: "ETD", callsign: "etihad" },
+  { icao: "ETH", callsign: "ethiopian" },
+  { icao: "EWG", callsign: "eurowings" },
+  { icao: "EXS", callsign: "channex" },
+  { icao: "EZY", callsign: "easy" },
+  { icao: "FDX", callsign: "fedex" },
+  { icao: "FIN", callsign: "finair" },
+  { icao: "IBE", callsign: "iberia" },
+  { icao: "ICE", callsign: "iceair" },
+  { icao: "ITY", callsign: "itarrow" },
+  { icao: "JAF", callsign: "beauty" },
+  { icao: "JBU", callsign: "jetblue" },
+  { icao: "JIA", callsign: "blue streak" },
+  { icao: "KAL", callsign: "korean air" },
+  { icao: "KLM", callsign: "klm" },
+  { icao: "LGL", callsign: "luxair" },
+  { icao: "LOT", callsign: "lot" },
+  { icao: "MAC", callsign: "arabia maroc" },
+  { icao: "MXY", callsign: "moxy" },
+  { icao: "NFA", callsign: "north flying" },
+  { icao: "NJE", callsign: "fraction" },
+  { icao: "NOZ", callsign: "nordic" },
+  { icao: "NSZ", callsign: "rednose" },
+  { icao: "OCN", callsign: "ocean" },
+  { icao: "PGT", callsign: "sunturk" },
+  { icao: "QTR", callsign: "qatari" },
+  { icao: "RJA", callsign: "jordanian" },
+  { icao: "ROT", callsign: "tarom" },
+  { icao: "RPA", callsign: "brickyard" },
+  { icao: "ROU", callsign: "rouge" },
+  { icao: "RYR", callsign: "ryanair" },
+  { icao: "SAS", callsign: "scandinavian" },
+  { icao: "SIA", callsign: "singapore" },
+  { icao: "SVA", callsign: "saudia" },
+  { icao: "SWA", callsign: "southwest" },
+  { icao: "SWR", callsign: "swiss" },
+  { icao: "TAP", callsign: "air portugal" },
+  { icao: "THA", callsign: "thai" },
+  { icao: "THY", callsign: "turkish" },
+  { icao: "TOM", callsign: "tom jet" },
+  { icao: "TRA", callsign: "transavia" },
+  { icao: "TSC", callsign: "air transat" },
+  { icao: "TUI", callsign: "tui jet" },
+  { icao: "TVS", callsign: "skytravel" },
+  { icao: "UAE", callsign: "emirates" },
+  { icao: "UAL", callsign: "united" },
+  { icao: "UPS", callsign: "ups" },
+  { icao: "VIR", callsign: "virgin express" },
+  { icao: "VKG", callsign: "viking" },
+  { icao: "VLG", callsign: "vueling" },
+  { icao: "VOE", callsign: "volotea" },
+  { icao: "WIF", callsign: "wideroe" },
+  { icao: "WJA", callsign: "westjet" },
+  { icao: "WZZ", callsign: "wizzair" }
+];

@@ -81,3 +81,45 @@ export const ASSESSMENT_BUTTONS: AssessmentButton[] = [
     color: 'red',
   },
 ] as const;
+
+// =============================================================================
+// GENERATOR TYPES
+// =============================================================================
+
+/**
+ * Aircraft interface for aviation traffic exercises
+ */
+export interface Ac {
+  callsign: string;
+  wtc: 'L'|'M'|'H';
+  type: { name: string; type: string };
+  isVFR: boolean;
+  flightRule: 'VFR' | 'IFR';
+  isMil?: boolean; // Military flag for intruders when target is VFR
+  heading: number;
+  level: number;
+  levelChange?: { to: number; dir: '↑'|'↓' };
+  speed: number;
+  position: { x: number; y: number };
+  history: { x: number; y: number }[];
+}
+
+/**
+ * Traffic situation interface describing the spatial relationship between aircraft
+ */
+export interface Situation {
+  clock: number;
+  distance: number;
+  direction: string;
+  level: string;
+}
+
+/**
+ * Complete aviation exercise interface containing target, intruder, situation, and solution
+ */
+export interface Exercise {
+  target: Ac;
+  intruder: Ac;
+  situation: Situation;
+  solution: string;
+}

@@ -1,9 +1,0 @@
-⦁	In mobile, the question mark additional info pop-up appears half outside the screen. Maybe something akin to a media query would fix this.
-⦁	The chance that it’s VFR should be 75% (and 25% IFR)
-⦁	IFR callsigsn are generated almost perfectly. The only thing is that the first character after the initial 3 letters (e.g. “AAL”) should be a number. After that, it can maintain the same logic as you already have (= random chance it could be a letter or a number but once started with letters, it should maintain letters)
-⦁	Sometimes traffic is generated that is at a completely irrelevant level (see examples). If a piece of logic would be added such that if the target is a VFR, the intruder also has to be a VFR, and that the level is within 200 to 1000 feet of the target, this will be solved.
-⦁	When the target is VFR, the intruder also has to be VFR (the exercises should never mix IFR with VFR traffic)
-⦁	The label line is still being generated on top of the aircraft square. It would like cleaner if it would be below (the square on top)
-⦁	Descending through the level isn’t always generated properly. Sometimes the intruder descends TO the level of the target (not actually below). Other times it does work very well (see examples)
-⦁	I have yet to find an example where the intruder is climbing through the level (not just descending). Should be the same logic in the opposite sense. If it’s too much of a hassle to add, it’s not top priority. I can always add it later.
-⦁	The average score should be in percentages, so it’s clear even when the user selects 5 or 20 exercises.
