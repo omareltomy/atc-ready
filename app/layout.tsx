@@ -136,7 +136,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           `}
         </Script>
         {children}
-        <Analytics />
+        <Analytics /> {/* Next.js Vercel Analytics */}
       </body>
     </html>
   );

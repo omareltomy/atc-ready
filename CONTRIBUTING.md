@@ -38,15 +38,12 @@ Thank you for your interest in contributing to ATC Ready! This guide will help y
 **1. Clone and Setup**
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/atc-ready.git
+git clone https://github.com/omareltomy/atc-ready.git
 cd atc-ready
 
 # Install dependencies
 npm install
 
-# Verify installation
-npm run build
-```
 
 **2. Development Server**
 ```bash
