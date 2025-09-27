@@ -38,7 +38,11 @@ Thank you for your interest in contributing to ATC Ready! This guide will help y
 **1. Clone and Setup**
 ```bash
 # Clone the repository
+<<<<<<< HEAD
 git clone https://github.com/omareltomy/atc-ready.git
+=======
+git clone https://github.com/omareltomy/stijn.git
+>>>>>>> 7bb42a847c95eccc87f3190fc75618f43c3bf5de
 cd atc-ready
 
 # Install dependencies
@@ -236,7 +240,7 @@ npx tsc --noEmit
 **2. Development Process**
 ```bash
 # Fork the repository on GitHub
-git clone https://github.com/yourusername/atc-ready.git
+git clone https://github.com/omareltomy/stijn.git
 
 # Create feature branch  
 git checkout -b feature/your-feature-name
