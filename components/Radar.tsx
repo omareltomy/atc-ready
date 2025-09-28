@@ -480,7 +480,7 @@ export default function Radar({ exercise }: Props) {
         }
       }
 
-      // 🎯 Choose the best position for the label (like finding the best spot to put a name tag)
+      // Choose the best position for the label (like finding the best spot to put a name tag)
       interface LabelCandidate {
         x: number;
         y: number;
